@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    TrayWindow - the notification-area popup.
+
+    A borderless, non-resizable, always-on-top WinUI 3 window sized to its
+    content and positioned next to the notification-area icon. The hosting
+    content is swapped between the device panel and the context menu.
+
+    Surface is the opaque themed layer behind the popup content. It is a sibling of
+    the content rather than a background on the host, so the theme applied to
+    RootLayer reaches both.
+
+    RootLayer carries the theme and the entrance fade for the whole popup, so the
+    surface and the content can never disagree about either: they are siblings,
+    so a theme or opacity set on RootHost alone would not reach Surface.
+-->
+<Window
+    x:Class="AudioPlaybackConnectorWinUI.TrayWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid x:Name="RootLayer">
+        <Border x:Name="Surface" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}" />
+
+        <ContentControl
+            x:Name="RootHost"
+            IsTabStop="True"
+            UseSystemFocusVisuals="False"
+            Background="Transparent"
+            HorizontalContentAlignment="Stretch"
+            VerticalContentAlignment="Stretch" />
+    </Grid>
+</Window>

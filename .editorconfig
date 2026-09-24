@@ -1,0 +1,9 @@
+[*]
+end_of_line = lf
+
+# The resource scripts are UTF-16LE with a BOM and CRLF in the working tree, which
+# is what .gitattributes declares. An editor that followed the rule above would
+# rewrite them to LF, producing a whole-file diff and upsetting the resource
+# compiler, so they are excluded from it.
+[*.rc]
+end_of_line = crlf

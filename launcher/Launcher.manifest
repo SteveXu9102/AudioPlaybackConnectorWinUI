@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  Application manifest for the single-file launcher.
+
+  The launcher is the process the user actually starts, so it needs the same
+  declarations the application carries: without a manifest the linker embeds only
+  its default, which claims no supported OS, no DPI awareness and no long path
+  support. The launcher is also the part that writes the payload under
+  %LOCALAPPDATA%, where a deep install path can exceed MAX_PATH.
+
+  The version here mirrors the resource scripts; tools/set-version.ps1 keeps the
+  three of them in step.
+-->
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <assemblyIdentity
+    version="1.0.0.0"
+    processorArchitecture="*"
+    name="com.stevexu9102.AudioPlaybackConnectorWinUI.Launcher"
+    type="win32"
+  />
+  <description>AudioPlaybackConnectorWinUI launcher</description>
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <!-- Windows 10 2004 (10.0.19041) is the minimum supported OS: it is the
+           first release exposing AudioPlaybackConnection (Bluetooth A2DP Sink). -->
+      <!-- "maxversiontested" is CASE SENSITIVE. Do not change this. -->
+      <maxversiontested Id="10.0.26100.0"/>
+      <!-- Windows 10 / Windows 11 -->
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
+    </application>
+  </compatibility>
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/PM</dpiAware>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, PerMonitor</dpiAwareness>
+      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
+    </windowsSettings>
+  </application>
+</assembly>

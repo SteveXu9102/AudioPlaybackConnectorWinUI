@@ -1,0 +1,190 @@
+# Simplified Chinese translation for AudioPlaybackConnectorWinUI.
+# Copyright (C) 2020 Richard Yu <yurichard3839@gmail.com>
+# Modifications Copyright (C) 2026 SteveXu9102
+# This file is distributed under the same license as the AudioPlaybackConnectorWinUI package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: AudioPlaybackConnectorWinUI\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-21 00:00+0800\n"
+"PO-Revision-Date: 2026-09-21 00:00+0800\n"
+"Last-Translator: Richard Yu <yurichard3839@gmail.com>\n"
+"Language-Team: \n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: App.xaml.cpp
+msgid "AudioPlaybackConnectorWinUI could not start."
+msgstr "AudioPlaybackConnectorWinUI 无法启动。"
+
+#: App.xaml.cpp FluentView.xaml.cpp
+msgid "AudioPlaybackConnectorWinUI"
+msgstr ""
+
+#: App.xaml.cpp
+msgid "AudioPlaybackConnectorWinUI is not supported on this operating system version."
+msgstr "此操作系统版本不支持 AudioPlaybackConnectorWinUI。"
+
+#: App.xaml.cpp
+msgid "Unsupported Operating System"
+msgstr "不支持的操作系统"
+
+#: App.xaml.cpp
+msgid "Audio device connected"
+msgstr "音频设备已连接"
+
+#: App.xaml.cpp
+msgid "Audio device disconnected"
+msgstr "音频设备已断开连接"
+
+#: App.xaml.cpp
+msgid "AudioPlaybackConnectorWinUI is ready"
+msgstr "AudioPlaybackConnectorWinUI 已就绪"
+
+#: App.xaml.cpp
+msgid "Waiting for a Bluetooth audio device."
+msgstr "等待蓝牙音频设备连接。"
+
+#: AudioPlaybackService.cpp
+msgid "The device could not be removed"
+msgstr "无法删除该设备"
+
+#: ConfirmDialogWindow.xaml.cpp
+msgid "Cancel"
+msgstr "取消"
+
+#: ContextMenuView.xaml.cpp
+msgid "Allow paired devices to connect"
+msgstr "允许已配对设备连接"
+
+#: ContextMenuView.xaml.cpp
+msgid "Notifications"
+msgstr "通知"
+
+#: ContextMenuView.xaml.cpp
+msgid "Start with Windows"
+msgstr "开机时启动"
+
+#: ContextMenuView.xaml.cpp
+msgid "System"
+msgstr "系统"
+
+#: ContextMenuView.xaml.cpp
+msgid "Light"
+msgstr "浅色"
+
+#: ContextMenuView.xaml.cpp
+msgid "Dark"
+msgstr "深色"
+
+#: ContextMenuView.xaml.cpp
+msgid "Theme"
+msgstr "主题"
+
+#: ContextMenuView.xaml.cpp
+msgid "Chinese (Simplified)"
+msgstr "简体中文"
+
+#: ContextMenuView.xaml.cpp
+msgid "Chinese (Traditional)"
+msgstr "繁體中文"
+
+#: ContextMenuView.xaml.cpp
+msgid "English"
+msgstr "英语"
+
+#: ContextMenuView.xaml.cpp
+msgid "Language"
+msgstr "语言"
+
+#: ContextMenuView.xaml.cpp
+msgid "Bluetooth Settings"
+msgstr "蓝牙设置"
+
+#: ContextMenuView.xaml.cpp
+msgid "Licenses"
+msgstr "许可信息"
+
+#: ContextMenuView.xaml.cpp TrayWindow.xaml.cpp
+msgid "Exit"
+msgstr "退出"
+
+#: FluentView.xaml.cpp
+msgid "Bluetooth audio playback (A2DP Sink)"
+msgstr "蓝牙音频播放（A2DP 接收端）"
+
+#: FluentView.xaml.cpp
+msgid "Audio devices"
+msgstr "音频设备"
+
+#: FluentView.xaml.cpp
+msgid "Pair a new device"
+msgstr "配对新设备"
+
+#: FluentView.xaml.cpp
+msgid "No Bluetooth audio devices found. Add one in Bluetooth settings first."
+msgstr "未找到蓝牙音频设备。请先在蓝牙设置中添加设备。"
+
+#: FluentView.xaml.cpp
+msgid "Reconnect on next start"
+msgstr "下次启动时重新连接"
+
+#: FluentView.xaml.cpp TrayWindow.xaml.cpp
+msgid "Remove device"
+msgstr "删除设备"
+
+#: FluentView.xaml.cpp
+msgid "Disconnect"
+msgstr "断开连接"
+
+#: FluentView.xaml.cpp
+msgid "Connect"
+msgstr "连接"
+
+#: FluentView.xaml.cpp
+msgid "More"
+msgstr "更多"
+
+#: LicenseDialogWindow.xaml.cpp
+msgid "Close"
+msgstr "关闭"
+
+#: LicenseDialogWindow.xaml.cpp
+msgid "The complete text of these notices is compiled into this program: %zu characters in all, of which the first %zu are shown here. The copy next to the program is not read."
+msgstr "这些声明的全文已编译进本程序：共 %zu 个字符，此处显示前 %zu 个。程序不会读取旁边的副本。"
+
+#: TrayWindow.xaml.cpp
+msgid "The pairing is deleted from Windows and any audio playing from it stops."
+msgstr "将从 Windows 中删除该设备的配对，正在播放的音频会中断。"
+
+#: FluentView.xaml.cpp TrayWindow.xaml.cpp
+msgid "Remove"
+msgstr "删除"
+
+#: TrayWindow.xaml.cpp
+msgid "Exit AudioPlaybackConnectorWinUI"
+msgstr "退出 AudioPlaybackConnectorWinUI"
+
+#: TrayWindow.xaml.cpp
+msgid "All connections will be closed.\nExit anyway?"
+msgstr "所有连接都将关闭。\n仍然要退出吗？"
+
+#: ViewHelpers.h
+msgid "Connected"
+msgstr "已连接"
+
+#: ViewHelpers.h
+msgid "Connecting"
+msgstr "正在连接"
+
+#: ViewHelpers.h
+msgid "Failed"
+msgstr "失败"
+
+#: ViewHelpers.h
+msgid "Not connected"
+msgstr "未连接"

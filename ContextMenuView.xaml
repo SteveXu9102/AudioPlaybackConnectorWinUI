@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ContextMenuView - the menu shown when the notification-area icon is
+    right-clicked.
+
+    It carries the application-level settings and commands (keeping the receiver
+    ready for paired devices, notifications, start with Windows, the theme and
+    language groups, Bluetooth settings, Licenses and Exit) so the left-click panel
+    stays focused on connecting devices. A device's own commands live in that
+    device's card in the panel, behind the ellipsis button on its row. The window
+    hosting this menu is borderless and always on top, and paints an opaque themed
+    surface, so the menu reads as a Fluent context menu.
+-->
+<UserControl
+    x:Class="AudioPlaybackConnectorWinUI.ContextMenuView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid>
+        <!--
+            Palette probe: menu rows are created in code, so they read their
+            brushes from these zero-sized elements. This keeps every Fluent
+            colour token declared in markup.
+        -->
+        <StackPanel Visibility="Collapsed" Width="0" Height="0">
+            <Border x:Name="ProbePrimaryText" BorderBrush="{ThemeResource TextFillColorPrimaryBrush}" />
+            <Border x:Name="ProbeSecondaryText" BorderBrush="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Border x:Name="ProbeAccentText" BorderBrush="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+            <Border x:Name="ProbeCardBackground" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+            <Border x:Name="ProbeCardBorder" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" />
+        </StackPanel>
+
+        <StackPanel x:Name="ItemPanel" Margin="8" Spacing="8" />
+    </Grid>
+</UserControl>

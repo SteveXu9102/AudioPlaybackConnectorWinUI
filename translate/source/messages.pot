@@ -1,0 +1,191 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Richard Yu <yurichard3839@gmail.com>
+# Modifications Copyright (C) 2026 SteveXu9102
+# This file is distributed under the same license as the AudioPlaybackConnectorWinUI package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: AudioPlaybackConnectorWinUI\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-21 00:00+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: App.xaml.cpp
+msgid "AudioPlaybackConnectorWinUI could not start."
+msgstr ""
+
+#: App.xaml.cpp FluentView.xaml.cpp
+msgid "AudioPlaybackConnectorWinUI"
+msgstr ""
+
+#: App.xaml.cpp
+msgid "AudioPlaybackConnectorWinUI is not supported on this operating system version."
+msgstr ""
+
+#: App.xaml.cpp
+msgid "Unsupported Operating System"
+msgstr ""
+
+#: App.xaml.cpp
+msgid "Audio device connected"
+msgstr ""
+
+#: App.xaml.cpp
+msgid "Audio device disconnected"
+msgstr ""
+
+#: App.xaml.cpp
+msgid "AudioPlaybackConnectorWinUI is ready"
+msgstr ""
+
+#: App.xaml.cpp
+msgid "Waiting for a Bluetooth audio device."
+msgstr ""
+
+#: AudioPlaybackService.cpp
+msgid "The device could not be removed"
+msgstr ""
+
+#: ConfirmDialogWindow.xaml.cpp
+msgid "Cancel"
+msgstr ""
+
+#: ContextMenuView.xaml.cpp
+msgid "Allow paired devices to connect"
+msgstr ""
+
+#: ContextMenuView.xaml.cpp
+msgid "Notifications"
+msgstr ""
+
+#: ContextMenuView.xaml.cpp
+msgid "Start with Windows"
+msgstr ""
+
+#: ContextMenuView.xaml.cpp
+msgid "System"
+msgstr ""
+
+#: ContextMenuView.xaml.cpp
+msgid "Light"
+msgstr ""
+
+#: ContextMenuView.xaml.cpp
+msgid "Dark"
+msgstr ""
+
+#: ContextMenuView.xaml.cpp
+msgid "Theme"
+msgstr ""
+
+#: ContextMenuView.xaml.cpp
+msgid "Chinese (Simplified)"
+msgstr ""
+
+#: ContextMenuView.xaml.cpp
+msgid "Chinese (Traditional)"
+msgstr ""
+
+#: ContextMenuView.xaml.cpp
+msgid "English"
+msgstr ""
+
+#: ContextMenuView.xaml.cpp
+msgid "Language"
+msgstr ""
+
+#: ContextMenuView.xaml.cpp
+msgid "Bluetooth Settings"
+msgstr ""
+
+#: ContextMenuView.xaml.cpp
+msgid "Licenses"
+msgstr ""
+
+#: ContextMenuView.xaml.cpp TrayWindow.xaml.cpp
+msgid "Exit"
+msgstr ""
+
+#: FluentView.xaml.cpp
+msgid "Bluetooth audio playback (A2DP Sink)"
+msgstr ""
+
+#: FluentView.xaml.cpp
+msgid "Audio devices"
+msgstr ""
+
+#: FluentView.xaml.cpp
+msgid "Pair a new device"
+msgstr ""
+
+#: FluentView.xaml.cpp
+msgid "No Bluetooth audio devices found. Add one in Bluetooth settings first."
+msgstr ""
+
+#: FluentView.xaml.cpp
+msgid "Reconnect on next start"
+msgstr ""
+
+#: FluentView.xaml.cpp TrayWindow.xaml.cpp
+msgid "Remove device"
+msgstr ""
+
+#: FluentView.xaml.cpp
+msgid "Disconnect"
+msgstr ""
+
+#: FluentView.xaml.cpp
+msgid "Connect"
+msgstr ""
+
+#: FluentView.xaml.cpp
+msgid "More"
+msgstr ""
+
+#: LicenseDialogWindow.xaml.cpp
+msgid "Close"
+msgstr ""
+
+#: LicenseDialogWindow.xaml.cpp
+msgid "The complete text of these notices is compiled into this program: %zu characters in all, of which the first %zu are shown here. The copy next to the program is not read."
+msgstr ""
+
+#: TrayWindow.xaml.cpp
+msgid "The pairing is deleted from Windows and any audio playing from it stops."
+msgstr ""
+
+#: FluentView.xaml.cpp TrayWindow.xaml.cpp
+msgid "Remove"
+msgstr ""
+
+#: TrayWindow.xaml.cpp
+msgid "Exit AudioPlaybackConnectorWinUI"
+msgstr ""
+
+#: TrayWindow.xaml.cpp
+msgid "All connections will be closed.\nExit anyway?"
+msgstr ""
+
+#: ViewHelpers.h
+msgid "Connected"
+msgstr ""
+
+#: ViewHelpers.h
+msgid "Connecting"
+msgstr ""
+
+#: ViewHelpers.h
+msgid "Failed"
+msgstr ""
+
+#: ViewHelpers.h
+msgid "Not connected"
+msgstr ""

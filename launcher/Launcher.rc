@@ -1,0 +1,47 @@
+// Resource script for the single-file launcher.
+//
+// The launcher executable is the first part of the packaged file, so the icon
+// and the version information a user sees on the distributed file come from
+// here; the application payload that follows it supplies modules, not
+// resources. The identity below therefore has to match the application's own
+// resource script, and it repeats the original MIT copyright notice.
+#include <winres.h>
+
+#define IDI_AudioPlaybackConnectorWinUI 1
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+
+IDI_AudioPlaybackConnectorWinUI ICON "../AudioPlaybackConnector.Rounded.ico"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 1,0,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040004b0"
+        BEGIN
+            VALUE "CompanyName", "SteveXu9102"
+            VALUE "FileDescription", "AudioPlaybackConnectorWinUI"
+            VALUE "FileVersion", "1.0.0.0"
+            VALUE "InternalName", "AudioPlaybackConnectorWinUI.exe"
+            VALUE "LegalCopyright", "Copyright (C) 2020 Richard Yu; modifications Copyright (C) 2026 SteveXu9102"
+            VALUE "OriginalFilename", "AudioPlaybackConnectorWinUI.exe"
+            VALUE "ProductName", "AudioPlaybackConnectorWinUI"
+            VALUE "ProductVersion", "1.0.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x400, 1200
+    END
+END

@@ -1,0 +1,171 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ '**' ]
+  pull_request:
+  workflow_dispatch:
+
+# gh release create/upload writes releases, and the default token has been
+# read-only for contents since 2023 - without this the tag job fails with a 403.
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    # A release has to carry the version of the tag it was cut from. Nothing used
+    # to write the version files, so every download reported 1.0.0.0 and a bug
+    # report could not name the build it came from.
+    - name: Stamp the release version
+      if: startsWith(github.ref, 'refs/tags/')
+      shell: pwsh
+      # Both tag styles are accepted: the version files take the bare number, so a
+      # "v1.0.0" tag stamps exactly what a "1.0.0" tag does.
+      run: |
+        $version = "${{ github.ref_name }}".TrimStart('v')
+        pwsh tools/set-version.ps1 -Version $version
+
+    # Catches a version bumped in one file and not in the others, on every build
+    # rather than only on a tag.
+    - name: Check the version files agree
+      shell: pwsh
+      run: pwsh tools/set-version.ps1 -Verify
+
+    # Every step below deletes its output directory and rebuilds, so the four
+    # distributions mean four full builds of the same solution.
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: nuget-${{ runner.os }}-${{ hashFiles('AudioPlaybackConnectorWinUI.vcxproj', 'launcher/Launcher.vcxproj') }}
+        restore-keys: nuget-${{ runner.os }}-
+
+    - name: Regenerate translation resources
+      shell: bash
+      run: sh translate/gen_rc.sh
+
+    # The compiled catalogs are committed, so the working tree has to come out of
+    # the regeneration unchanged. Without this the committed copy can drift from
+    # the .po files and nobody notices, because the build only ever reads the
+    # working-tree copy.
+    - name: Check the translation resources are in sync
+      shell: bash
+      run: |
+        if ! git diff --exit-code -- translate/generated; then
+          echo "::error::translate/generated does not match the .po files. Run translate/gen_rc.sh and commit the result."
+          exit 1
+        fi
+
+    # The icon assets are generated and the generated copies are committed, so the
+    # working tree has to come out of the regeneration unchanged - the same reason as
+    # the translation catalogs above. tools/gen-rounded-icon.py writes
+    # AudioPlaybackConnector.Rounded.svg, and tools/gen-icons.ps1 reads that file to
+    # write the icon and the panel badge, so they are run in that order.
+    - name: Regenerate the icon assets
+      shell: pwsh
+      run: |
+        python tools/gen-rounded-icon.py
+        pwsh tools/gen-icons.ps1
+
+    - name: Check the icon assets are in sync
+      shell: bash
+      run: |
+        if ! git diff --exit-code -- AudioPlaybackConnector.Rounded.svg AudioPlaybackConnector.Rounded.ico AudioPlaybackConnector.Tile.svg; then
+          echo "::error::the generated icon assets do not match their generators. Run tools/gen-rounded-icon.py, then tools/gen-icons.ps1, and commit the result."
+          exit 1
+        fi
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    # Builds the WinUI 3 application (self-contained payload) and the launcher.
+    - name: Restore NuGet packages
+      run: msbuild AudioPlaybackConnectorWinUI.sln -t:Restore -p:Configuration=Release -p:Platform=x64
+
+    # The four distributions: both architectures crossed with both deployment
+    # models. Every step builds and packages one single file.
+    - name: Build and package x64 (self-contained)
+      run: pwsh tools/build-single-file.ps1 -Platform x64 -Deployment SelfContained
+
+    - name: Build and package x64 (framework-dependent)
+      run: pwsh tools/build-single-file.ps1 -Platform x64 -Deployment FrameworkDependent
+
+    - name: Build and package ARM64 (self-contained)
+      run: pwsh tools/build-single-file.ps1 -Platform ARM64 -Deployment SelfContained
+
+    - name: Build and package ARM64 (framework-dependent)
+      run: pwsh tools/build-single-file.ps1 -Platform ARM64 -Deployment FrameworkDependent
+
+    # Every distribution writes its executable and, beside it, the two notice files
+    # tools/package-single-file.ps1 writes there - LICENSE.txt rendered from LICENSE,
+    # THIRD-PARTY-NOTICES.txt copied from the assembled text. upload-artifact's
+    # if-no-files-found only fails when *nothing* matches, so a single missing file
+    # used to upload the other seven and pass; this asserts all eight before anything
+    # is uploaded.
+    - name: Check every artifact was produced
+      shell: bash
+      run: |
+        missing=0
+        for path in \
+          dist/x64/AudioPlaybackConnectorWinUI-x64-SelfContained.exe \
+          dist/x64/AudioPlaybackConnectorWinUI-x64-FrameworkDependent.exe \
+          dist/x64/LICENSE.txt \
+          dist/x64/THIRD-PARTY-NOTICES.txt \
+          dist/ARM64/AudioPlaybackConnectorWinUI-ARM64-SelfContained.exe \
+          dist/ARM64/AudioPlaybackConnectorWinUI-ARM64-FrameworkDependent.exe \
+          dist/ARM64/LICENSE.txt \
+          dist/ARM64/THIRD-PARTY-NOTICES.txt; do
+          if [ ! -f "$path" ]; then
+            echo "::error::missing build artifact: $path"
+            missing=$((missing + 1))
+          fi
+        done
+        if [ "$missing" -ne 0 ]; then
+          echo "::error::$missing of the 8 expected build artifacts were not produced."
+          exit 1
+        fi
+        echo "all 8 expected build artifacts are present"
+
+    # The notice files are written next to the packaged file by
+    # tools/package-single-file.ps1. The redistributed Windows App SDK keeps
+    # Microsoft's terms, so they have to travel with every download.
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: AudioPlaybackConnectorWinUI
+        path: |
+          dist/x64/AudioPlaybackConnectorWinUI-x64-SelfContained.exe
+          dist/x64/AudioPlaybackConnectorWinUI-x64-FrameworkDependent.exe
+          dist/x64/LICENSE.txt
+          dist/x64/THIRD-PARTY-NOTICES.txt
+          dist/ARM64/AudioPlaybackConnectorWinUI-ARM64-SelfContained.exe
+          dist/ARM64/AudioPlaybackConnectorWinUI-ARM64-FrameworkDependent.exe
+          dist/ARM64/LICENSE.txt
+          dist/ARM64/THIRD-PARTY-NOTICES.txt
+
+    - name: Publish draft release
+      if: startsWith(github.ref, 'refs/tags/')
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --draft --title "$GITHUB_REF_NAME"
+        # One copy of each notice file: a release asset name has to be unique, and
+        # the text is the same for both platforms.
+        gh release upload "$GITHUB_REF_NAME" \
+          dist/x64/AudioPlaybackConnectorWinUI-x64-SelfContained.exe \
+          dist/x64/AudioPlaybackConnectorWinUI-x64-FrameworkDependent.exe \
+          dist/ARM64/AudioPlaybackConnectorWinUI-ARM64-SelfContained.exe \
+          dist/ARM64/AudioPlaybackConnectorWinUI-ARM64-FrameworkDependent.exe \
+          dist/x64/LICENSE.txt \
+          dist/x64/THIRD-PARTY-NOTICES.txt --clobber

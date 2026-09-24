@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AudioPlaybackConnectorWinUI - Windows App SDK / WinUI 3 desktop application.
+
+  Deployment model: unpackaged and self-contained. The application keeps the
+  original project's "download and run" distribution - no MSIX and no separate
+  Windows App Runtime installation is required.
+-->
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup Label="NuGet">
+    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+    <NuGetTargetMoniker>native,Version=v0.0</NuGetTargetMoniker>
+    <NuGetTargetPlatformIdentifier>Windows</NuGetTargetPlatformIdentifier>
+    <NuGetTargetPlatformVersion>$(WindowsTargetPlatformVersion)</NuGetTargetPlatformVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Globals">
+    <CppWinRTOptimized>true</CppWinRTOptimized>
+    <CppWinRTRootNamespaceAutoMerge>true</CppWinRTRootNamespaceAutoMerge>
+    <MinimalCoreWin>true</MinimalCoreWin>
+    <ProjectGuid>{2DAAABDD-2402-4023-BC3E-B6E93FAD567B}</ProjectGuid>
+    <ProjectName>AudioPlaybackConnectorWinUI</ProjectName>
+    <RootNamespace>AudioPlaybackConnectorWinUI</RootNamespace>
+    <!-- TargetName must equal RootNamespace so the produced binaries (.exe/.pri)
+         line up with the generated .winmd. -->
+    <TargetName>$(RootNamespace)</TargetName>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <MinimumVisualStudioVersion>17.0</MinimumVisualStudioVersion>
+    <!-- WinUI 3 desktop app (not a UWP app container). -->
+    <AppContainerApplication>false</AppContainerApplication>
+    <ApplicationType>Windows Store</ApplicationType>
+    <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <!-- Windows 10 2004 is the first release with AudioPlaybackConnection (A2DP Sink). -->
+    <WindowsTargetPlatformMinVersion>10.0.19041.0</WindowsTargetPlatformMinVersion>
+    <UseWinUI>true</UseWinUI>
+    <!--
+      Both identifiers are listed even though one platform is built at a time:
+      the restore assets file is shared by every platform, so a single-platform
+      list makes the other platform's build fail its "RuntimeIdentifier" check.
+    -->
+    <RuntimeIdentifiers>win10-x64;win10-arm64</RuntimeIdentifiers>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <!--
+      Deployment model. Self-contained is the default: the Windows App SDK
+      binaries are copied next to the executable, so the packaged single file
+      runs on a machine that has no Windows App Runtime installed.
+      tools/build-single-file.ps1 -Deployment FrameworkDependent overrides this
+      with -p:WindowsAppSDKSelfContained=false, which leaves only
+      Microsoft.WindowsAppRuntime.Bootstrap.dll in the payload and uses the
+      runtime installed on the machine instead.
+
+      Either way the build produces a folder, and tools/package-single-file.ps1
+      bundles that folder into the one-file launcher produced by
+      launcher/Launcher.vcxproj.
+    -->
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <AppxPackage>false</AppxPackage>
+    <WindowsPackageType>None</WindowsPackageType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      The WinUI component packages are referenced directly rather than through
+      the Microsoft.WindowsAppSDK aggregate package. The aggregate also pulls in
+      Windows AI, Windows ML, Widgets and App Content Search, which would add
+      well over a hundred megabytes of runtime to a notification-area utility
+      that only needs WinUI.
+    -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="2.3.9" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.Runtime" Version="2.5.1" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.DWrite" Version="2.1.0" />
+    <!-- Pinned: WinUI asks for >= 2.1.8 and NuGet otherwise resolves 2.1.9 with a warning. -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.InteractiveExperiences" Version="2.1.9" />
+    <PackageReference Include="Microsoft.Windows.CppWinRT" Version="3.0.260818.1" />
+    <PackageReference Include="Microsoft.Windows.ImplementationLibrary" Version="1.0.260126.7" />
+  </ItemGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM64">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <!-- v145 ships with Visual Studio 2026; fall back to v143 on Visual Studio 2022. -->
+    <PlatformToolset>v145</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)' == '17.0'">v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <DesktopCompatible>true</DesktopCompatible>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+
+  <!--
+    Static C/C++ runtime plus the Universal CRT, so the application does not
+    depend on the Microsoft Visual C++ redistributable being installed. Both
+    deployment models need this: the Windows App SDK does not carry the CRT, and
+    the framework-dependent payload therefore cannot either.
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)HybridCRT.props" />
+
+  <PropertyGroup>
+    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)$(Platform)\obj\$(Configuration)\</IntDir>
+    <!-- Unpackaged C++ WinUI apps resolve ms-appx URIs from the project root. -->
+    <AppxPriInitialPath></AppxPriInitialPath>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <!-- The entry point is written in App.xaml.cpp so that the single-instance
+           guard runs before the XAML compiler's generated main initialises WinUI. -->
+      <PreprocessorDefinitions>UNICODE;_UNICODE;WIN32_LEAN_AND_MEAN;NOMINMAX;DISABLE_XAML_GENERATED_MAIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <!-- The tray icon is still rasterised from the bundled SVG with Direct2D
+           and placed with the classic shell notification API. -->
+      <AdditionalDependencies>d2d1.lib;gdi32.lib;user32.lib;shell32.lib;shlwapi.lib;comctl32.lib;advapi32.lib;ole32.lib;propsys.lib;bthprops.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalOptions>/PDBALTPATH:%_PDB% %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <Manifest Include="AudioPlaybackConnectorWinUI.manifest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="App.xaml.h">
+      <DependentUpon>App.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="AppSettings.h" />
+    <ClInclude Include="AppShell.h" />
+    <ClInclude Include="AudioPlaybackService.h" />
+    <ClInclude Include="BluetoothLink.h" />
+    <ClInclude Include="ContextMenuView.xaml.h">
+      <DependentUpon>ContextMenuView.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Direct2DSvg.hpp" />
+    <ClInclude Include="DeviceIcon.hpp" />
+    <ClInclude Include="ConfirmDialogWindow.xaml.h">
+      <DependentUpon>ConfirmDialogWindow.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="FluentView.xaml.h">
+      <DependentUpon>FluentView.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="FnvHash.hpp" />
+    <ClInclude Include="I18n.hpp" />
+    <ClInclude Include="LicenseDialogWindow.xaml.h">
+      <DependentUpon>LicenseDialogWindow.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="StartupRegistration.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="TrayIcon.h" />
+    <ClInclude Include="TrayWindow.xaml.h">
+      <DependentUpon>TrayWindow.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Util.hpp" />
+    <ClInclude Include="ViewHelpers.h" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClCompile Include="App.xaml.cpp">
+      <DependentUpon>App.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="AppSettings.cpp" />
+    <ClCompile Include="AppShell.cpp" />
+    <ClCompile Include="AudioPlaybackService.cpp" />
+    <ClCompile Include="BluetoothLink.cpp" />
+    <ClCompile Include="ContextMenuView.xaml.cpp">
+      <DependentUpon>ContextMenuView.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ConfirmDialogWindow.xaml.cpp">
+      <DependentUpon>ConfirmDialogWindow.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="FluentView.xaml.cpp">
+      <DependentUpon>FluentView.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="LicenseDialogWindow.xaml.cpp">
+      <DependentUpon>LicenseDialogWindow.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="StartupRegistration.cpp" />
+    <ClCompile Include="TrayIcon.cpp" />
+    <ClCompile Include="TrayWindow.xaml.cpp">
+      <DependentUpon>TrayWindow.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml" />
+    <Page Include="ContextMenuView.xaml" />
+    <Page Include="ConfirmDialogWindow.xaml" />
+    <Page Include="FluentView.xaml" />
+    <Page Include="LicenseDialogWindow.xaml" />
+    <Page Include="TrayWindow.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Midl Include="Project.idl">
+      <SubType>Code</SubType>
+    </Midl>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ResourceCompile Include="AudioPlaybackConnectorWinUI.rc">
+      <!-- RCDATA 301 embeds the compressed notices, which are written before the
+           build. Without the explicit dependencies the resource would only be
+           recompiled when the .rc changed, so a rebuild could keep an embedded copy
+           that no longer matches the text the packaging ships beside the
+           executable. -->
+      <AdditionalInputs>$(MSBuildThisFileDirectory)THIRD-PARTY-NOTICES.compressed;%(AdditionalInputs)</AdditionalInputs>
+    </ResourceCompile>
+    <ResourceCompile Include="translate\generated\translate.rc" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="AudioPlaybackConnector.Rounded.ico" />
+    <None Include="AudioPlaybackConnector.Rounded.svg" />
+    <!-- Deployed next to the executable: the panel badge loads it by URI. -->
+    <Image Include="AudioPlaybackConnector.Tile.svg" />
+  </ItemGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+
+</Project>
+
+
+
+

@@ -1,0 +1,145 @@
+Third-party notices
+-------------------
+
+AudioPlaybackConnectorWinUI is a modified derivative of AudioPlaybackConnector by
+Richard Yu (https://github.com/ysc3839/AudioPlaybackConnector), which is MIT
+licensed; see LICENSE. The original work is Copyright (c) 2020 Richard Yu; the
+rewritten code and the WinUI 3 user interface are Copyright (c) 2026
+SteveXu9102. The application also redistributes the components below, which keep
+their own terms.
+
+This file is the single description of those components, and it is the file that
+is edited. tools/assemble-third-party-notices.ps1 assembles the complete text at
+build time: it takes this file as it stands and appends the licence and notice
+text of every redistributed NuGet package, read from the restored packages rather
+than transcribed by hand. The assembled text is written to the repository root as
+THIRD-PARTY-NOTICES.txt before the application is compiled, so the resource
+script embeds that complete text in the executable (RCDATA 301, stored compressed
+and decompressed in memory when the dialog opens, which reads no file), and
+tools/package-single-file.ps1 copies the same bytes next to every packaged file.
+The text those copies carry and the text the program shows are therefore one
+document, and the notice text cannot drift from what is distributed.
+
+The links below are a convenience for a reader who wants a component's terms from
+where they are published. Each was checked with an HTTP request on 2026-09-24,
+and the status then observed is written next to it. A link is not a notice and
+does not discharge the obligation: the terms themselves travel in this file, and
+the complete text is what is compiled into the program and shipped beside it.
+
+The application shows the complete text and LICENSE.txt in its Licenses dialog -
+right click the notification-area icon - so the notices can be read without
+leaving the program.
+
+
+Microsoft Windows App SDK
+-------------------------
+
+The self-contained distribution carries the files binplaced by the WindowsAppSDK
+NuGet packages; the framework-dependent distribution carries
+Microsoft.WindowsAppRuntime.Bootstrap.dll. Section 3(a)(i) of the Microsoft
+Software License Terms for the Microsoft Windows App SDK permits redistributing
+those files in both deployment models.
+
+Those files are not covered by this project's MIT licence. They remain under
+Microsoft's terms, and those terms do not allow removing or modifying Microsoft's
+notices; the full terms and the notices inside the SDK are appended to this file
+below.
+
+The redistributed binaries come from these packages:
+
+  Microsoft.WindowsAppSDK.Runtime
+  Microsoft.WindowsAppSDK.WinUI
+  Microsoft.WindowsAppSDK.Foundation
+  Microsoft.WindowsAppSDK.InteractiveExperiences
+  Microsoft.WindowsAppSDK.DWrite
+  Microsoft.WindowsAppSDK.Base
+
+Those are package names only. The versions are whatever the NuGet restore
+resolved, which obj/project.assets.json records; they are deliberately not
+repeated here, because a version written into this file by hand goes stale the
+next time a package is updated. The assembly step reads that same file, names the
+version it found above each appended text, and fails the build if a package whose
+binaries are redistributed has no licence or notice file to append.
+
+The terms those packages are published under:
+
+  https://www.nuget.org/packages/Microsoft.WindowsAppSDK.Runtime/2.5.1/license
+  checked 2026-09-24: HTTP 200, and the page carries "MICROSOFT SOFTWARE LICENSE
+  TERMS" for the "MICROSOFT WINDOWS APP SDK". The other packages listed above
+  ship the same terms.
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+
+
+Microsoft C++/WinRT
+-------------------
+
+Used to generate the WinRT projection headers the application compiles against.
+It is header-only and no C++/WinRT binary is redistributed; its licence follows.
+
+  https://github.com/microsoft/cppwinrt/blob/master/LICENSE
+  checked 2026-09-24: HTTP 200, and GitHub reports the MIT licence for that
+  repository.
+
+    MIT License
+
+    Copyright (c) Microsoft Corporation.
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE
+
+
+Windows Implementation Library (WIL)
+------------------------------------
+
+Used for its smart pointers and error handling helpers. It is header-only and no
+WIL binary is redistributed; its licence follows.
+
+  https://github.com/microsoft/wil/blob/master/LICENSE
+  checked 2026-09-24: HTTP 200, and GitHub reports the MIT licence for that
+  repository.
+
+    MIT License
+
+    Copyright (c) Microsoft Corporation. All rights reserved.
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE
+
+
+Trademarks
+----------
+
+Windows, Microsoft and the Windows App SDK are trademarks of the Microsoft group
+of companies. This project is not affiliated with, sponsored by, or endorsed by
+Microsoft Corporation or by the author of the original AudioPlaybackConnector.

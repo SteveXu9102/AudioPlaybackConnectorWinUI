@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx</Extensions>
+    </Filter>
+    <Filter Include="XAML">
+      <UniqueIdentifier>{f2e5f3a0-6f1c-4d2b-9c47-1a6f1b0d5e11}</UniqueIdentifier>
+      <Extensions>xaml</Extensions>
+    </Filter>
+    <Filter Include="MIDL">
+      <UniqueIdentifier>{0d2a4d2c-1c2a-4a29-9f0a-6a4a2f1b7c33}</UniqueIdentifier>
+      <Extensions>idl</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms;svg</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="App.xaml.cpp">
+      <Filter>XAML</Filter>
+    </ClCompile>
+    <ClCompile Include="AppSettings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AppShell.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AudioPlaybackService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BluetoothLink.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ContextMenuView.xaml.cpp">
+      <Filter>XAML</Filter>
+    </ClCompile>
+    <ClCompile Include="ConfirmDialogWindow.xaml.cpp">
+      <Filter>XAML</Filter>
+    </ClCompile>
+    <ClCompile Include="FluentView.xaml.cpp">
+      <Filter>XAML</Filter>
+    </ClCompile>
+    <ClCompile Include="LicenseDialogWindow.xaml.cpp">
+      <Filter>XAML</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StartupRegistration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TrayIcon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TrayWindow.xaml.cpp">
+      <Filter>XAML</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="App.xaml.h">
+      <Filter>XAML</Filter>
+    </ClInclude>
+    <ClInclude Include="AppSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AppShell.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AudioPlaybackService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BluetoothLink.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ContextMenuView.xaml.h">
+      <Filter>XAML</Filter>
+    </ClInclude>
+    <ClInclude Include="Direct2DSvg.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DeviceIcon.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConfirmDialogWindow.xaml.h">
+      <Filter>XAML</Filter>
+    </ClInclude>
+    <ClInclude Include="FluentView.xaml.h">
+      <Filter>XAML</Filter>
+    </ClInclude>
+    <ClInclude Include="FnvHash.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="I18n.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LicenseDialogWindow.xaml.h">
+      <Filter>XAML</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StartupRegistration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TrayIcon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TrayWindow.xaml.h">
+      <Filter>XAML</Filter>
+    </ClInclude>
+    <ClInclude Include="Util.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ViewHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <Filter>XAML</Filter>
+    </ApplicationDefinition>
+    <Page Include="ContextMenuView.xaml">
+      <Filter>XAML</Filter>
+    </Page>
+    <Page Include="ConfirmDialogWindow.xaml">
+      <Filter>XAML</Filter>
+    </Page>
+    <Page Include="FluentView.xaml">
+      <Filter>XAML</Filter>
+    </Page>
+    <Page Include="LicenseDialogWindow.xaml">
+      <Filter>XAML</Filter>
+    </Page>
+    <Page Include="TrayWindow.xaml">
+      <Filter>XAML</Filter>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="Project.idl">
+      <Filter>MIDL</Filter>
+    </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="AudioPlaybackConnectorWinUI.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="translate\generated\translate.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="AudioPlaybackConnector.Rounded.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="AudioPlaybackConnector.Rounded.svg">
+      <Filter>Resource Files</Filter>
+    </None>
+    <!-- Deployed next to the executable: the panel badge loads it by URI. -->
+    <Image Include="AudioPlaybackConnector.Tile.svg">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="AudioPlaybackConnectorWinUI.manifest" />
+  </ItemGroup>
+</Project>
+
+
+
+

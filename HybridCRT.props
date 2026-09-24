@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Hybrid CRT.
+
+  The static C/C++ runtime supplemented by the Universal CRT, which is an
+  operating-system component. This is the linkage Microsoft recommends for an
+  unpackaged, self-contained Windows App SDK C++ application: it removes the
+  dependency on VCRUNTIME140.dll and MSVCP140.dll - that is, on the Microsoft
+  Visual C++ 2015-2022 redistributable - which a /MD build has, and which neither
+  the Windows App SDK nor tools/package-single-file.ps1 ships.
+
+  This is the file from the Windows App SDK repository
+  (https://github.com/microsoft/WindowsAppSDK/blob/main/HybridCRT.props) with the
+  same rules; docs/Coding-Guidelines/HybridCRT.md there explains why each one is
+  needed. It is imported by AudioPlaybackConnectorWinUI.vcxproj only. The launcher
+  keeps its own fully static CRT: it has to start before anything else, and it
+  links no Windows App SDK code.
+-->
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <!-- Static runtime, so no dependency on VCRUNTIME140d.dll / MSVCP140d.dll. -->
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <!-- Link the runtime and the STL statically, but the CRT dynamically: the
+           static CRT import library is ignored in favour of the Universal CRT's. -->
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries);libucrtd.lib</IgnoreSpecificDefaultLibraries>
+      <AdditionalOptions>%(AdditionalOptions) /defaultlib:ucrtd.lib</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <!-- Static runtime, so no dependency on VCRUNTIME140.dll / MSVCP140.dll. -->
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries);libucrt.lib</IgnoreSpecificDefaultLibraries>
+      <AdditionalOptions>%(AdditionalOptions) /defaultlib:ucrt.lib</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+
+</Project>
