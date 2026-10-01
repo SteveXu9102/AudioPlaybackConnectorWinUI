@@ -173,13 +173,11 @@ namespace
 		wchar_t buffer[MAX_PATH * 4]{};
 		const DWORD length = GetEnvironmentVariableW(L"LOCALAPPDATA", buffer, ARRAYSIZE(buffer));
 
-		// No fallback to the temporary directory. When LOCALAPPDATA is absent - a
-		// service-like or scheduled environment - %TEMP% can resolve to a location
-		// shared with other users, and this is the directory an executable is unpacked
-		// into and then run from. A payload and its completion marker left there by
-		// somebody else would be run as whoever launches this file, so the unpack is
-		// refused instead: without a private per-user directory there is nowhere safe
-		// to put it.
+		// No fallback to the temporary directory: when LOCALAPPDATA is absent,
+		// %TEMP% can resolve to a location shared with other users, and this is the
+		// directory an executable is unpacked into and run from. Without a private
+		// per-user directory there is nowhere safe to put it, so the unpack is
+		// refused.
 		if (length == 0 || length >= ARRAYSIZE(buffer))
 			Fail(L"AudioPlaybackConnectorWinUI needs a per-user application data directory, and this environment does not have one.");
 
@@ -339,10 +337,7 @@ namespace
 
 		// A running image is mapped without write sharing, so opening it for write
 		// fails with a sharing violation - and that is the only failure that means
-		// "somebody is using this". Any other failure - a read-only attribute, an ACL, a
-		// half-written file - must not be read as "in use": doing that left a damaged
-		// payload whose executable existed but could not be written with its marker
-		// restored, so it was never unpacked again and the application never started.
+		// "somebody is using this". Any other failure must not be read as "in use".
 		for (int attempt = 0; attempt < 2; ++attempt)
 		{
 			const HANDLE probe = CreateFileW(executable.c_str(), GENERIC_WRITE,
@@ -398,12 +393,9 @@ namespace
 	/// One argument, quoted so that the child's CommandLineToArgvW gives back
 	/// exactly this string.
 	///
-	/// Wrapping in quotes is not enough: a backslash that ends an argument escapes
-	/// the closing quote, so that "C:\tmp\" reparses as C:\tmp" and swallows the
-	/// next argument, and a quote inside an argument merges arguments. The rule the
-	/// runtime parses by is that backslashes are literal unless they precede a
-	/// quote, where they must be doubled - and doubled once more, plus one, to
-	/// escape a quote itself.
+	/// A backslash that ends an argument escapes the closing quote, and a quote inside
+	/// an argument merges arguments, so the rule the runtime parses by is applied:
+	/// backslashes are literal unless they precede a quote, where they are doubled.
 	/// </summary>
 	std::wstring QuoteArgument(std::wstring_view argument)
 	{

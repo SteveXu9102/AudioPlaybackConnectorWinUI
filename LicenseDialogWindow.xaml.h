@@ -7,11 +7,9 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 {
 	/// <summary>
 	/// The licence information, in a window of its own: the tray popup is sized to
-	/// its content and a confirmation is only wide enough for a sentence, so a
-	/// long text gets a fixed, scrollable window instead.
-	///
-	/// The window is reused: closing hides it rather than closing it, because a
-	/// closed WinUI window cannot be shown a second time.
+	/// its content and a confirmation is only wide enough for a sentence. The window
+	/// is reused: closing hides it, because a closed WinUI window cannot be shown a
+	/// second time.
 	/// </summary>
 	struct LicenseDialogWindow : LicenseDialogWindowT<LicenseDialogWindow>
 	{

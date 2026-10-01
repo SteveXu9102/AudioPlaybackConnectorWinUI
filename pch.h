@@ -13,7 +13,6 @@
 #include <d2d1_3.h>
 #include <d2d1svg.h>
 #include <BluetoothAPIs.h>
-#include <bthsdpdef.h>
 
 // windows.h defines GetCurrentTime as a macro, which clashes with the
 // Storyboard::GetCurrentTime member projected by C++/WinRT.

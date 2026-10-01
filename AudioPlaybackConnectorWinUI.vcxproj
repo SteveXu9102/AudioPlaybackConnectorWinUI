@@ -2,9 +2,12 @@
 <!--
   AudioPlaybackConnectorWinUI - Windows App SDK / WinUI 3 desktop application.
 
-  Deployment model: unpackaged and self-contained. The application keeps the
-  original project's "download and run" distribution - no MSIX and no separate
-  Windows App Runtime installation is required.
+  Deployment model: unpackaged. The application keeps the original project's
+  "download and run" distribution - no MSIX. Self-contained is the default, with
+  the Windows App SDK binaries next to the executable and no Windows App Runtime
+  installation required; a framework-dependent build instead needs the Windows
+  App Runtime installed on the machine. Both are bundled into one file by
+  tools/package-single-file.ps1.
 -->
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 

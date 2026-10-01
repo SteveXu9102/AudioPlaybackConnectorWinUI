@@ -14,8 +14,6 @@
 // notices resource; windows.h does not pull it in.
 #include <compressapi.h>
 #include <cstring>
-// The notices are the only user of it, so the dependency is declared where it is
-// used rather than in the project's link settings.
 #pragma comment(lib, "cabinet.lib")
 
 using namespace winrt;

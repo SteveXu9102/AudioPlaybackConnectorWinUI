@@ -1,18 +1,8 @@
 #pragma once
 
-// "Start with Windows" for a portable, unpackaged application.
-//
-// The registration is a value under HKCU\...\Run. That is the classic mechanism
-// for this kind of application: per user, no elevation, no shortcut file and no
-// installer, and the user can still switch it off in Task Manager. The other
-// implementations were deliberately not used:
-//
-//   * a shortcut in the Startup folder is the same idea with a file instead of a
-//     registry value, but it needs the shell link API and leaves a file behind;
-//   * a scheduled task can delay the start or run with different privileges, at
-//     the cost of a much heavier dependency (the Task Scheduler COM API);
-//   * Windows.ApplicationModel.StartupTask only exists for packaged applications,
-//     and this application is unpackaged.
+// "Start with Windows" for a portable, unpackaged application, registered as a
+// value under HKCU\...\Run: per user, no elevation, no shortcut file and no
+// installer, and the user can still switch it off in Task Manager.
 
 namespace AudioPlaybackConnectorWinUI
 {

@@ -26,12 +26,10 @@ param(
     [string]$Source = "$PSScriptRoot/../AudioPlaybackConnector.Rounded.svg",
     [string]$IcoPath = "$PSScriptRoot/../AudioPlaybackConnector.Rounded.ico",
     [string]$TilePath = "$PSScriptRoot/../AudioPlaybackConnector.Tile.svg",
-    # The five sizes Windows' own application icons carry.
     [int[]]$Sizes = @(256, 48, 32, 24, 16),
     # Neutral grey tile, white glyph: legible on a light or a dark shell.
     [string]$TileColor = '#5C5C5C',
     [string]$GlyphColor = '#FFFFFF',
-    # Fraction of the tile left empty around the glyph.
     [double]$Padding = 0.19,
     # Corner radius as a fraction of the tile size: Windows 11 application icons
     # are rounded squares.

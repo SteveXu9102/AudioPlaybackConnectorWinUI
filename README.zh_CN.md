@@ -112,6 +112,8 @@ XAML 资源索引都必须以真实文件存在于磁盘上。
 
 * `AudioPlaybackConnectorWinUI.json`：设置持久化（主题、语言、接收端与通知开关，以及需要重新连接的设备）。
 
+绕过启动器从负载目录启动程序时，上述文件保存到负载目录。
+
 ## 从源码构建
 
 需要 Visual Studio 2022（17.x）或 2026，安装 **使用 C++ 的桌面开发** 工作负载、**Windows 11 SDK 10.0.26100**，并在 `PATH` 中提供 Python 3。项目使用 v145 工具集，在 Visual Studio 2022 上回退到 v143；WinUI 3 各组件包是直接引用的，而不是通过 Windows App SDK 聚合包，因此只携带托盘工具真正需要的内容（见 `AudioPlaybackConnectorWinUI.vcxproj`）。
@@ -129,7 +131,7 @@ pwsh tools/build-single-file.ps1 -Platform ARM64 -Deployment FrameworkDependent
 
 每个命令输出 `dist\<Platform>\AudioPlaybackConnectorWinUI-<Platform>-<Deployment>.exe`，以及必须随附的两个许可文件。用 `AudioPlaybackConnectorWinUI.sln` 可在 IDE 中构建同样的项目（不含打包）。
 
-有两个生成物需要提交，各自都有生成脚本：
+翻译有两个生成物需要提交，各自都有生成脚本：
 
 * `translate/generated/*` 由 `translate/source/*.po` 通过 `sh translate/gen_rc.sh` 生成（需要 POSIX shell，CI 使用 Git Bash）。新增或修改用户可见字符串时还要重新生成 `translate/source/messages.pot`，这需要 GNU gettext：`sh translate/gen_pot.sh`。
 * 版本号分布在两个资源脚本和两个清单文件中。用 `pwsh tools/set-version.ps1 -Version x.x.x` 一次性更新这四处，用 `pwsh tools/set-version.ps1 -Verify` 校验。CI 会在打包前按标签写入版本，并在版本文件不一致时失败。
@@ -158,8 +160,8 @@ pwsh tools/build-single-file.ps1 -Platform ARM64 -Deployment FrameworkDependent
 
 * 程序内部：**右键菜单-许可信息**。对话框显示的是编译进可执行文件的许可与声明（RCDATA 300 和 301，
   声明以 MSZIP 压缩存放、在内存中解压）。
-  声明全文约 89 万字符，若让 `TextBlock` 全部排版会阻塞 UI 线程，所以对话框只显示开头部分，
-  并注明全文总长度以及完整文本已编译进程序。
+  声明全文约 89 万字符，对话框只显示开头部分，
+  全文完整文本已编译进程序。
 
 打包进程序的运行时不受本项目 MIT 许可约束。
 

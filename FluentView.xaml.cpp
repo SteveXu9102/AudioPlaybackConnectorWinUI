@@ -22,13 +22,13 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 {
 	namespace
 	{
-				constexpr wchar_t kGlyphBluetooth[] = L"\uE702";
+		constexpr wchar_t kGlyphBluetooth[] = L"\uE702";
 		constexpr wchar_t kGlyphRemove[] = L"\uE74D";
-				constexpr wchar_t kGlyphMore[] = L"\uE712";
+		constexpr wchar_t kGlyphMore[] = L"\uE712";
 
 		constexpr double kCardRadius = 8;
 		constexpr double kBadgeSize = 38;
-				constexpr double kDeviceIconSize = 20;
+		constexpr double kDeviceIconSize = 20;
 
 		/// <summary>
 		/// The badge content: the icon Windows gives the device, or a generic
@@ -83,7 +83,7 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 			Brush transparent;
 		};
 
-				Border MakeCard(Palette const& palette)
+		Border MakeCard(Palette const& palette)
 		{
 			Border card;
 			card.CornerRadius(ViewHelpers::CornerRadius(kCardRadius));
@@ -150,7 +150,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 			ViewHelpers::Transparent(),
 		};
 
-		// ---- header -------------------------------------------------------
 		if (IsTraceEnabled())
 		{
 			LogTrace(L"palette panel loaded=" + std::to_wstring(IsLoaded() ? 1 : 0)
@@ -178,7 +177,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 		PairButton().BorderBrush(palette.cardBorder);
 		Automation::AutomationProperties::SetName(PairButton(), _(L"Pair a new device"));
 
-		// ---- devices ------------------------------------------------------
 		DevicePanel().Children().Clear();
 
 		if (devices.empty())
@@ -203,12 +201,10 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 
 			auto card = MakeCard(palette);
 
-			// ---- the device's own submenu, revealed by its ellipsis button ----
 			StackPanel details;
 			details.Spacing(6);
 			details.Visibility(Visibility::Collapsed);
 
-			// ---- reconnect this device on the next start ----
 			{
 				Grid setting;
 				ColumnDefinition labelColumn;
@@ -253,11 +249,7 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 				details.Children().Append(setting);
 			}
 
-			// ---- remove this device ----
 			{
-				// The glyph and its label are one centred unit in the row: the colour
-				// stays the theme's critical brush rather than the panel's own, so the
-				// destructive row is legible in both themes.
 				hstring const removeText = _(L"Remove device");
 
 				StackPanel content;

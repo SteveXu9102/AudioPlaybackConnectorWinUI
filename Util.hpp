@@ -264,10 +264,6 @@ inline void LogFailure(std::wstring_view context, std::wstring_view message)
 }
 
 // Popup show/hide tracing, off by default: APC_TRACE=1 turns it on.
-//
-// Exactly "1" turns it on. Any other value - including "0", which is what someone
-// reaching for the switch to turn tracing *off* would set - leaves it off, so the
-// variable does what its name suggests in both directions.
 inline bool IsTraceEnabled()
 {
 	static const bool enabled = []

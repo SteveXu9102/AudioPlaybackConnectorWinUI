@@ -6,10 +6,6 @@ The format is deliberately tiny: a 16-bit entry count, followed by that many
 (hash, offset) pairs, followed by the UTF-16LE translations. The hash is FNV-1a
 over the UTF-16LE bytes of the English source string, optionally prefixed with
 a msgctxt and a 0x04 separator. See I18n.hpp for the reader.
-
-This script replaces the previous dependency on the ``translate-toolkit``
-package (and its git checkout), so the catalogs can be regenerated with nothing
-but a stock Python 3 interpreter.
 """
 
 import re
@@ -89,7 +85,7 @@ def parse_po(text):
     return entries
 
 
-def po2ymo(infile, outfile, includefuzzy=False, encoding='utf-16le'):
+def po2ymo(infile, outfile):
     text = infile.read().decode('utf-8-sig')
 
     units = {}
@@ -100,17 +96,17 @@ def po2ymo(infile, outfile, includefuzzy=False, encoding='utf-16le'):
         # The header entry has an empty msgid; untranslated entries have no target.
         if not source or not target:
             continue
-        if entry.get('fuzzy') and not includefuzzy:
+        if entry.get('fuzzy'):
             continue
 
         context = entry.get('msgctxt')
         if context:
             source = context + '\u0004' + source
 
-        key = fnv1a_32(source.encode(encoding))
+        key = fnv1a_32(source.encode('utf-16le'))
         if key in units:
             raise SystemExit(f'hash collision: {source!r} shares {key:#010x} with another string')
-        units[key] = target.encode(encoding) + bytes(2)
+        units[key] = target.encode('utf-16le') + bytes(2)
 
     if len(units) > 0xFFFF:
         raise SystemExit(f'too many entries for a 16-bit count: {len(units)}')

@@ -14,7 +14,7 @@ namespace
 		return L"error " + std::to_wstring(error);
 	}
 
-	/// <summary>True when the text is twelve hexadecimal digits.</summary>
+	/// <summary>True when the text is twelve hex digits.</summary>
 	bool IsValidAddress(std::wstring_view addressDigits)
 	{
 		return addressDigits.size() == 12 && std::all_of(addressDigits.begin(), addressDigits.end(),

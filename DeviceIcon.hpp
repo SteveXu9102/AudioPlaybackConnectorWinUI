@@ -1,16 +1,8 @@
 #pragma once
 
-// The icon Windows itself gives a device.
-//
-// Windows publishes it on the device interface as a resource reference into
-// DDORes.dll - "C:\Windows\System32\DDORes.dll,-3022" - and that is what this
-// renders, so the panel agrees with the icon Windows Settings shows for the same
-// device. Neither the device's name nor its Bluetooth class of device is used
-// instead: neither describes what kind of device it is.
-//
-// The glyph is drawn in the caller's colour rather than in its own, because the
-// resource is a single-colour shape that the panel tints for the theme and for
-// whether the device is connected.
+// The icon Windows itself gives a device: the "System.Devices.GlyphIcon" resource
+// reference into DDORes.dll, so the panel agrees with the icon Windows Settings
+// shows. It is drawn in the caller's colour, the resource being single-colour.
 
 namespace AudioPlaybackConnectorWinUI::DeviceIcon
 {

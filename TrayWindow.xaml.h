@@ -91,7 +91,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 		/// </summary>
 		void PositionPopup();
 
-
 		double SlideDistance() const;
 
 		/// <summary>Records the offset the slide starts from.</summary>

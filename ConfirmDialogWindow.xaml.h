@@ -7,10 +7,8 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 {
 	/// <summary>
 	/// A confirmation, hosted in its own small window so it is not constrained by
-	/// the tray popup, which is sized exactly to its content.
-	///
-	/// The window is reused: cancelling hides it rather than closing it, because a
-	/// closed WinUI window cannot be shown a second time.
+	/// the tray popup. The window is reused: cancelling hides it rather than closing
+	/// it, because a closed WinUI window cannot be shown a second time.
 	/// </summary>
 	struct ConfirmDialogWindow : ConfirmDialogWindowT<ConfirmDialogWindow>
 	{

@@ -8,11 +8,8 @@
 namespace winrt::AudioPlaybackConnectorWinUI::implementation
 {
 	/// <summary>
-	/// WinUI 3 application object.
-	///
-	/// AudioPlaybackConnectorWinUI is a notification-area (tray) utility, so
-	/// OnLaunched creates the tray icon plus the hidden popup window instead of
-	/// showing a main window.
+	/// WinUI 3 application object. OnLaunched creates the tray icon plus the hidden
+	/// popup window instead of showing a main window.
 	/// </summary>
 	struct App : AppT<App>
 	{

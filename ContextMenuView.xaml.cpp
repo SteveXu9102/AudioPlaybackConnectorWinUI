@@ -30,26 +30,17 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 		constexpr double kGutterWidth = 28;
 
 		/// <summary>
-		/// The width a settings switch occupies in this theme.
-		///
-		/// A card's width decides the popup's width, and the popup is sized to its
-		/// content, so the card's own measurement has to include the switch. A control
-		/// gets its width from its template and a ToggleSwitch that has never been
-		/// laid out reports no width at all, which would size the window exactly one
-		/// switch too narrow on the first build and wrap the longest label. This is
-		/// the width the switch's template gives it, set as a minimum so that the
-		/// measurement can never be short of it - and so it still grows if a future
-		/// template is wider.
+		/// The width a settings switch occupies in this theme. A ToggleSwitch that has
+		/// never been laid out reports no width, which would size the popup one switch
+		/// too narrow. Set as a minimum so a future template can only grow it.
 		/// </summary>
 		constexpr double kSwitchWidth = 52;
 
 		/// <summary>
-		/// The width a freshly built row needs, measured while it has never been
-		/// through a layout pass. That is what the popup is widened to fit: a
-		/// TextBlock that has already been laid out answers with the width it was
-		/// last wrapped at rather than with the width its text needs, and a menu
-		/// measured that way can never grow to fit its longest label and cuts it off
-		/// instead.
+		/// The width a freshly built row needs, measured while it has never been through
+		/// a layout pass. A TextBlock that has already been laid out answers with the
+		/// width it was last wrapped at, which cuts the longest label off instead of
+		/// widening the popup.
 		/// </summary>
 		double NaturalWidth(FrameworkElement const& element)
 		{
@@ -99,8 +90,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 		if (!AreSystemAnimationsEnabled())
 			return;
 
-		// A short stagger, tighter than the device panel: a menu is expected to be
-		// ready almost immediately.
 		m_entrance.Start(ItemPanel(), ItemPanel().Children(), 25, 200, 0.0, 1.0);
 	}
 
@@ -207,7 +196,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 		return AddRow(ItemPanel(), glyph, accentGlyph, text, m_palette.primary, std::move(onClick));
 	}
 
-
 	void ContextMenuView::Refresh()
 	{
 		m_palette = Palette{
@@ -231,7 +219,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 
 		auto const& settings = Settings();
 
-		// ---- keep the receiver ready: a settings card with a switch ----
 		{
 			ToggleSwitch allowSwitch;
 			allowSwitch.MinWidth(kSwitchWidth);
@@ -251,7 +238,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 			m_firstItem = allowSwitch;
 		}
 
-		// ---- notifications: a settings card with a switch ----
 		{
 			ToggleSwitch notificationsSwitch;
 			notificationsSwitch.MinWidth(kSwitchWidth);
@@ -270,7 +256,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 			AddCard(_(L"Notifications"), notificationsSwitch);
 		}
 
-		// ---- start with Windows: a settings card with a switch ----
 		{
 			ToggleSwitch startupSwitch;
 			startupSwitch.MinWidth(kSwitchWidth);
@@ -290,7 +275,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 			AddCard(_(L"Start with Windows"), startupSwitch);
 		}
 
-		// ---- theme: a settings card with a drop-down ----
 		{
 			struct ThemeOption
 			{
@@ -339,7 +323,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 			AddCard(_(L"Theme"), box);
 		}
 
-		// ---- language: a settings card with a drop-down ----
 		{
 			struct LanguageOption
 			{
@@ -389,7 +372,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 			AddCard(_(L"Language"), box);
 		}
 
-		// ---- the remaining commands ----
 		auto bluetoothRow = AddRow(
 			kGlyphSettings,
 			false,
@@ -423,8 +405,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 			});
 		Automation::AutomationProperties::SetAutomationId(exitRow, L"ExitItem");
 
-		// ---- the width the window has to be ----
-		//
 		// Every row was built just above and has not been laid out yet, so each one
 		// still reports the width it wants rather than the one it was last given.
 		double required = 0.0;

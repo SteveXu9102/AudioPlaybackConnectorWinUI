@@ -254,9 +254,7 @@ namespace AudioPlaybackConnectorWinUI::ViewHelpers
 	/// A tray icon callback is a message posted by the shell, so this process did not
 	/// receive the last input event - exactly the condition under which Windows
 	/// refuses SetForegroundWindow. The foreground lock timeout is cleared for the
-	/// duration of the call and restored afterwards, the foreground thread's input
-	/// queue is attached, and the result is verified rather than assumed because
-	/// Windows ignores the first request often enough to be worth asking twice.
+	/// call and restored afterwards, and the result is verified rather than assumed.
 	/// </summary>
 	inline bool ForceForeground(Mux::Window const& window)
 	{
@@ -397,13 +395,10 @@ namespace AudioPlaybackConnectorWinUI::ViewHelpers
 	/// <summary>
 	/// The size the given view needs when nothing but the monitor constrains it.
 	///
-	/// The hosting window is sized exactly to the popup content, so every string in
-	/// it - in any language - has to be able to ask for the room it needs; a fixed
-	/// width silently cuts the ones that are wider than it. The width is what the
-	/// content wants, never below the design width the popup is built around and
-	/// never above what the work area leaves; the height is then measured at that
-	/// width, because a label that wraps onto a second line needs the window to grow
-	/// downwards as well.
+	/// The hosting window is sized exactly to the popup content, so every string has
+	/// to be able to ask for the room it needs; a fixed width cuts the ones that are
+	/// wider. The width is what the content wants, bounded by neither a fixed width
+	/// nor the work-area cap, and the height is then measured at that width.
 	/// </summary>
 	inline ContentSize MeasureContent(
 		Mux::FrameworkElement const& view, double minWidthDip, double maxWidthDip, double fallbackHeightDip)
@@ -418,13 +413,10 @@ namespace AudioPlaybackConnectorWinUI::ViewHelpers
 			return std::ceil(std::clamp(width, minWidthDip, upper));
 		};
 
-		// Laid out once and then invalidated. The layout pass is what gives a
-		// control its template - a ToggleSwitch that has never been laid out reports
-		// no width at all - and the invalidation is what makes the unconstrained
-		// measure below really happen: the framework skips a measure that is still
-		// valid for a larger available size, and the answer would then be the width
-		// the window happened to have rather than the width the content needs, which
-		// is exactly how the popup used to keep cutting off its longest label.
+		// Laid out once and then invalidated: the layout pass is what gives a control
+		// its template, and the invalidation is what makes the unconstrained measure
+		// below really happen - the framework skips a measure that is still valid for
+		// a larger available size.
 		view.UpdateLayout();
 		view.InvalidateMeasure();
 
@@ -465,12 +457,10 @@ namespace AudioPlaybackConnectorWinUI::ViewHelpers
 	/// A staggered opacity fade for a list of elements, stepped by a frame timer.
 	///
 	/// It drives <see cref="Mux::UIElement::Opacity"/> rather than a composition
-	/// animation on the element visual, because the popup content is hosted inside a
-	/// content island where animating that visual's Opacity had no visible effect. The
-	/// elements are deliberately not translated: the popup window is sized exactly to
-	/// its content, so moving one would clip the outermost rows. The fade always runs
-	/// to its target value, so an interrupted or skipped animation cannot leave an
-	/// element stuck at a partial opacity.
+	/// animation on the element visual, which had no visible effect inside the popup's
+	/// content island, and the elements are not translated because the popup is sized
+	/// exactly to its content. The fade always runs to its target value, so an
+	/// interrupted animation cannot leave an element at a partial opacity.
 	/// </summary>
 	class StaggeredFade
 	{

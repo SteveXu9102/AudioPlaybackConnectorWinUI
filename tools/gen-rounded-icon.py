@@ -3,27 +3,11 @@
 
     python tools/gen-rounded-icon.py
 
-The glyph this variant replaces is a *stroked outline*: its outer contour is the
-speaker's centreline offset by half the stroke width, and its Bluetooth rune is a
-filled polygon with sharp corners. The generated variant draws the same speaker
-centreline with a round-capped, round-joined stroke of the original's weight - so
-the silhouette is preserved and every corner becomes round - and draws the rune as
-the canonical polyline with round caps.
-
-Two constraints shape the output:
-
-* Direct2D renders the tray icon with the root element's ``fill`` overridden by
-  the theme colour (see Direct2DSvg.hpp), so a stroke has to be expressed as
-  filled geometry: one rectangle per segment plus a disc at each end. Subpaths of
-  a single fill colour union, so one ``<path>`` is enough and the renderer needs
-  no change.
-* Only the path commands the shipped glyph already relied on (M, L and Z) are
-  emitted. The discs are 24-gons, whose flatness error is about 0.006px at tray
-  size, so the file cannot depend on SVG features the renderer may not implement.
-
-Every subpath is emitted in a canonical winding: the pieces of a stroke overlap
-(the discs cover the rectangle's ends), and under the nonzero fill rule an
-oppositely wound overlap would punch a hole in the glyph.
+Direct2D renders the tray icon with the root element's ``fill`` overridden by the
+theme colour (see Direct2DSvg.hpp), so a stroke has to be expressed as filled
+geometry: one rectangle per segment plus a disc at each end. Every subpath is
+emitted in a canonical winding, because the overlapping pieces would punch a hole
+in the glyph under the nonzero fill rule.
 """
 
 import math

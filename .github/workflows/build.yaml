@@ -66,11 +66,9 @@ jobs:
           exit 1
         fi
 
-    # The icon assets are generated and the generated copies are committed, so the
-    # working tree has to come out of the regeneration unchanged - the same reason as
-    # the translation catalogs above. tools/gen-rounded-icon.py writes
-    # AudioPlaybackConnector.Rounded.svg, and tools/gen-icons.ps1 reads that file to
-    # write the icon and the panel badge, so they are run in that order.
+    # The icon assets are generated and committed, so the working tree has to come
+    # out of the regeneration unchanged. gen-rounded-icon.py writes the .svg that
+    # gen-icons.ps1 reads, so they run in that order.
     - name: Regenerate the icon assets
       shell: pwsh
       run: |
@@ -88,12 +86,11 @@ jobs:
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
 
-    # Builds the WinUI 3 application (self-contained payload) and the launcher.
     - name: Restore NuGet packages
       run: msbuild AudioPlaybackConnectorWinUI.sln -t:Restore -p:Configuration=Release -p:Platform=x64
 
     # The four distributions: both architectures crossed with both deployment
-    # models. Every step builds and packages one single file.
+    # models; each step builds and packages one single file.
     - name: Build and package x64 (self-contained)
       run: pwsh tools/build-single-file.ps1 -Platform x64 -Deployment SelfContained
 
@@ -106,12 +103,9 @@ jobs:
     - name: Build and package ARM64 (framework-dependent)
       run: pwsh tools/build-single-file.ps1 -Platform ARM64 -Deployment FrameworkDependent
 
-    # Every distribution writes its executable and, beside it, the two notice files
-    # tools/package-single-file.ps1 writes there - LICENSE.txt rendered from LICENSE,
-    # THIRD-PARTY-NOTICES.txt copied from the assembled text. upload-artifact's
-    # if-no-files-found only fails when *nothing* matches, so a single missing file
-    # used to upload the other seven and pass; this asserts all eight before anything
-    # is uploaded.
+    # Every distribution writes its executable and the two notice files beside it.
+    # upload-artifact's if-no-files-found only fails when *nothing* matches, so this
+    # asserts all eight paths before anything is uploaded.
     - name: Check every artifact was produced
       shell: bash
       run: |

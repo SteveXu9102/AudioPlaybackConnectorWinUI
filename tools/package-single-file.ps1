@@ -36,10 +36,8 @@
 
     The notices are assembled before the application is compiled by
     tools\assemble-third-party-notices.ps1 and compiled into the executable as a
-    compressed resource the dialog decompresses in memory, and this script only
-    copies the uncompressed text here. Nothing is assembled twice, so the copy beside
-    the executable, the copy in the repository and the text inside the executable
-    cannot drift apart.
+    compressed resource the dialog decompresses in memory; this script only copies
+    the uncompressed text here, so the three copies cannot drift apart.
 
 .EXAMPLE
     pwsh tools/build-single-file.ps1 -Platform x64 -Deployment FrameworkDependent

@@ -46,8 +46,6 @@ namespace
 // the project file) so that the single-instance guard runs before any WinUI or
 // window state is created. A second launch must not add a second tray icon: it
 // asks the running instance to show its panel and then exits.
-//
-// Command-line arguments are ignored, and there is nothing for them to select.
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, int)
 {
 	SetLastError(ERROR_SUCCESS);

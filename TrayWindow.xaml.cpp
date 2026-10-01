@@ -187,8 +187,9 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 
 	bool TrayWindow::FocusOpenWindow()
 	{
-		// The confirmation is the only other window the application can have open, and a
-		// question that has not been answered outranks anything the icon would open.
+		// The confirmation and the licence dialog are the other windows the application
+		// can have open, and a question that has not been answered outranks anything the
+		// icon would open.
 		if (m_confirmDialog && m_confirmDialog->AppWindow().IsVisible())
 		{
 			LogTrace(L"tray activation: bringing the open confirmation forward");
@@ -350,7 +351,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 
 			ApplyTheme(theme);
 
-			// Re-render so the card reflects the change.
 			RefreshAfterEvent();
 		};
 
@@ -722,11 +722,10 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 	/// rule both share.
 	///
 	/// The anchor is the notification-area icon rectangle both are opened from, not
-	/// the pointer. The popup's bottom edge sits kTrayGap above the icon's top and
-	/// its right edge on the icon's right, and the result is clamped to the icon
-	/// monitor's work area with kScreenMargin on every side. The bottom edge is what
-	/// the anchor fixes, so content that grows taller grows the popup upwards and
-	/// leaves that edge where it is.
+	/// the pointer; the popup's bottom edge sits kTrayGap above the icon's top and its
+	/// right edge on the icon's right, clamped to the icon monitor's work area. The
+	/// bottom edge is what the anchor fixes, so content that grows taller grows the
+	/// popup upwards.
 	/// </summary>
 	void TrayWindow::PositionPopup()
 	{
@@ -879,7 +878,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 			return;
 		}
 
-		// Jump to the offset first, then slide up into place.
 		ViewHelpers::MoveContentArea(
 			*this, m_slideFrom.X, m_slideFrom.Y, m_slideFrom.Width, m_slideFrom.Height);
 
@@ -943,7 +941,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 		}
 
 		const double progress = static_cast<double>(elapsed) / m_fadeDurationMs;
-		// Decelerate into place when opening, accelerate away when closing.
 		const double eased = m_fadeTo > m_fadeFrom
 			? ViewHelpers::Decelerate(progress)
 			: ViewHelpers::Accelerate(progress);

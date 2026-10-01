@@ -1,10 +1,7 @@
 #pragma once
 
-// Notification-area icon host.
-//
-// WinUI 3 cannot create a notification-area icon, so this is the only piece of
-// classic Win32 UI left in the application: a hidden popup window that receives
-// the shell's callback messages for the icon.
+// Notification-area icon host: a hidden popup window that receives the shell's
+// callback messages for the icon, the one piece of classic Win32 UI left.
 
 namespace AudioPlaybackConnectorWinUI
 {

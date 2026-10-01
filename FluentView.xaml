@@ -42,7 +42,6 @@
             <Border x:Name="ProbeError" BorderBrush="{ThemeResource SystemFillColorCriticalBrush}" />
         </StackPanel>
 
-        <!-- Header: application identity. -->
         <StackPanel Grid.Row="0" Padding="20,18,20,10" Spacing="4">
             <Grid ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
@@ -81,13 +80,11 @@
             </Grid>
         </StackPanel>
 
-        <!-- Devices -->
         <ScrollViewer
             Grid.Row="1"
             VerticalScrollBarVisibility="Auto"
             HorizontalScrollBarVisibility="Disabled">
             <StackPanel Padding="20,4,20,16" Spacing="8">
-                <!-- Devices heading, with the pairing action on its trailing edge. -->
                 <Grid ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />

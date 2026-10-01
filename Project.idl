@@ -10,7 +10,8 @@ namespace AudioPlaybackConnectorWinUI
 {
     /// <summary>
     /// The notification-area popup. It shows the device panel or the context
-    /// menu and is the only visible window of the application.
+    /// menu. The confirmation and licence dialogs are windows of their own,
+    /// shown by this one.
     /// </summary>
     [default_interface]
     runtimeclass TrayWindow : Microsoft.UI.Xaml.Window

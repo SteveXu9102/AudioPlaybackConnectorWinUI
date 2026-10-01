@@ -1,7 +1,10 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <mutex>
+
+#include <winrt/Windows.System.Threading.h>
 
 // Bluetooth A2DP Sink connection management.
 //
@@ -9,11 +12,18 @@
 // through the Windows.Devices.Enumeration selector that AudioPlaybackConnection
 // publishes and the panel renders them itself.
 //
-// The A2DP sink transport is shared per process, so releasing one connection takes
-// every other connection of this process down with it. Holding the
-// AudioPlaybackConnection objects here makes this application the single owner of
-// every connection it opens, and "when the program side disconnects, everything
-// disconnects" is the intended behaviour.
+// Each device has its own AudioPlaybackConnection and the platform tears each one
+// down on its own: closing or releasing one leaves the other devices' Bluetooth
+// links up and their audio playing. What *is* process-wide is the reported state -
+// AudioPlaybackConnection::State() and every StateChanged event describe the
+// process, so one connection's teardown raises Closed on all of them and one
+// open raises Opened on all of them. Those reports are therefore never acted on
+// by themselves; the device's own Bluetooth link decides which device they are
+// about (see IsOpenForThisDevice and OnConnectionStateChanged).
+//
+// Holding the AudioPlaybackConnection objects here makes this application the
+// single owner of every connection it opens, so releasing the one a disconnect
+// names is enough to take that device - and only that device - off the air.
 
 namespace AudioPlaybackConnectorWinUI
 {
@@ -60,7 +70,7 @@ namespace AudioPlaybackConnectorWinUI
 
 		std::vector<DeviceEntry> const& Devices() const { return m_devices; }
 		bool IsConnected(std::wstring_view deviceId) const;
-		/// <summary>Ids of every device with a live connection, in UI order.</summary>
+		/// <summary>Ids of every device with a live connection.</summary>
 		std::vector<std::wstring> ConnectedDeviceIds() const;
 		/// <summary>
 		/// How many connections this service holds. Not the connected-device count:
@@ -77,10 +87,11 @@ namespace AudioPlaybackConnectorWinUI
 
 		void Connect(std::wstring deviceId);
 		/// <summary>
-		/// Disconnects everything: the A2DP sink transport is shared per process, so
-		/// closing one connection takes the others down with it whatever the caller
-		/// asked for. Every connection this service holds is closed and every device
-		/// is reported as disconnected in one update.
+		/// Disconnects one device: its own connection is released and no other
+		/// device is touched. Each device has its own AudioPlaybackConnection and
+		/// the platform tears each one down on its own, so the other devices keep
+		/// streaming - the process-wide StateChanged(Closed) their connections
+		/// report is dropped because their links are still up.
 		/// </summary>
 		void Disconnect(std::wstring deviceId);
 		/// <summary>
@@ -169,35 +180,26 @@ namespace AudioPlaybackConnectorWinUI
 			/// True once an open has been attributed to this connection's device.
 			///
 			/// This is what "connected" means, and it is deliberately not the same
-			/// question as "is this connection live": the allow-paired switch keeps a
-			/// started but unopened connection for every paired device, and reporting
-			/// one of those as connected is what lit up devices that had only been
-			/// invited.
+			/// question as "is this connection live": an invitation is a started but
+			/// unopened connection and is not connected.
 			///
-			/// The A2DP sink transport is shared per process, so the platform raises
-			/// StateChanged(Opened) on *every* connection of this process when any one
-			/// of them opens; the flag is therefore set only for the connection the
-			/// open could be attributed to (see IsOpenForThisDevice) and never from a
-			/// sibling's report. Read and written under <c>mutex</c>.
+			/// The flag is set only for the connection the open could be attributed to
+			/// (see IsOpenForThisDevice) and never from a sibling's report, and a
+			/// process-wide close never clears it. Read and written under <c>mutex</c>.
 			/// </summary>
 			bool open = false;
 			/// <summary>
 			/// True once an open has been asked for on this connection's own object.
 			///
-			/// Set when the open is issued, not when it is reported, because the
-			/// window between the two is the one where the connection is neither an
-			/// invitation any more (SetAllowPaired must not release it) nor open yet
-			/// (IsConnected must not report it). It is also the evidence that
-			/// survives the shared transport: StateChanged(Opened) alone is
-			/// process-wide, while an open this application asked for and then saw
-			/// reported here belongs to this device. Read and written under
-			/// <c>mutex</c>.
+			/// Set when the open is issued, not when it is reported, because the window
+			/// between the two is the one where the connection is neither an invitation
+			/// any more (SetAllowPaired must not release it) nor open yet (IsConnected
+			/// must not report it). Read and written under <c>mutex</c>.
 			/// </summary>
 			bool openRequested = false;
 			/// <summary>
-			/// Makes the flags above and the callback's State() read mutually
-			/// exclusive. Only ever held for a state read or a flag flip - never
-			/// across Close().
+			/// Makes the flags above and the callback's State() read mutually exclusive.
+			/// Only ever held for a state read or a flag flip - never across Close().
 			/// </summary>
 			std::mutex mutex;
 		};
@@ -209,8 +211,8 @@ namespace AudioPlaybackConnectorWinUI
 		/// <summary>True while this connection is still in the map and not closed.</summary>
 		bool IsConnectionLive(std::shared_ptr<Connection> const& connection) const;
 		/// <summary>
-		/// True while this connection's device is the one the sink transport is
-		/// carrying: an open was attributed to it and it has not been released.
+		/// True while this connection's device is the one the sink is carrying: an
+		/// open was attributed to it and it has not been released.
 		/// </summary>
 		bool IsConnectionOpen(std::shared_ptr<Connection> const& connection) const;
 		/// <summary>Records that this connection's device is, or is no longer, receiving.</summary>
@@ -231,17 +233,13 @@ namespace AudioPlaybackConnectorWinUI
 		/// </summary>
 		void ReleaseConnection(std::shared_ptr<Connection> const& connection);
 		/// <summary>
-		/// Every entry in the map, forgotten and closed.
+		/// Every entry in the map, forgotten and closed, on the calling thread.
+		/// Stop() uses that, because the process may not outlive the call and a
+		/// detached thread could be terminated before it had closed anything -
+		/// leaving the A2DP profile behind in the state that refuses every later
+		/// connection with 0x8007001F.
 		/// </summary>
-		/// <param name="synchronous">
-		/// True closes them on the calling thread before returning. Stop() uses that,
-		/// because the process may not outlive the call and a detached thread could be
-		/// terminated before it had closed anything - leaving the A2DP profile behind
-		/// in the state that refuses every later connection with 0x8007001F. False
-		/// hands each close to a thread of its own, which is what Disconnect() needs:
-		/// the panel is live and the user is waiting.
-		/// </param>
-		void ReleaseAllConnections(bool synchronous);
+		void ReleaseAllConnections();
 		/// <summary>
 		/// The one place a connection is closed: revoke the StateChanged subscription,
 		/// then Close() (each guarded), then drop the reference - in that order and
@@ -260,24 +258,21 @@ namespace AudioPlaybackConnectorWinUI
 		/// to.
 		///
 		/// The connection that raised the report is carried here rather than looked up
-		/// again from the device id: the shared transport makes every connection in
-		/// this process report the same open, so a report may only ever be applied to
-		/// the connection that produced it - never to whatever connection the device
-		/// id happens to name at the time.
+		/// again from the device id: the platform reports process-wide, so every
+		/// connection in this process reports the same state, and a report may only
+		/// ever be applied to the connection that produced it - never to whatever
+		/// connection the device id happens to name at the time.
 		/// </summary>
 		void OnConnectionStateChanged(
 			std::shared_ptr<Connection> const& connection, std::wstring deviceId, bool open);
 		/// <summary>
-		/// Subscribes to a connection's state changes. The callback runs on a media
-		/// stack thread and does exactly two things: read the state while the
-		/// connection is provably not closed, and hand the fact to the dispatcher. It
-		/// never blocks, because a state change arrives on an audio service thread
-		/// that must not be held up.
+		/// Subscribes to a connection's state changes. The callback reads the state
+		/// while the connection is provably not closed and hands the fact to the
+		/// dispatcher, and it never blocks: a state change arrives on an audio service
+		/// thread that must not be held up.
 		///
 		/// <paramref name="deviceId"/> is this connection's own device, captured by
-		/// value per subscription - never a loop variable or a shared "current
-		/// device". The id that is reported is the sender's own DeviceId() whenever it
-		/// has one, so the identity travels with the object that raised the event.
+		/// value per subscription - never a loop variable or a shared "current device".
 		/// </summary>
 		void SubscribeStateChanges(std::shared_ptr<Connection> const& connection, std::wstring const& deviceId);
 		/// <summary>
@@ -295,8 +290,8 @@ namespace AudioPlaybackConnectorWinUI
 		void OnAdvertiseFinished(std::wstring const& deviceId, std::shared_ptr<Connection> const& connection, bool started);
 		/// <summary>
 		/// Notes that one close finished. The invitation pass runs once the last of
-		/// them has, because a Close() takes the shared A2DP transport down with it
-		/// and an invitation started during one would be torn down underneath it.
+		/// them has, so that a pass never runs while a close is still tearing a
+		/// connection down.
 		/// </summary>
 		void OnTeardownFinished();
 		/// <summary>
@@ -313,8 +308,8 @@ namespace AudioPlaybackConnectorWinUI
 		void Notify();
 		void SetState(std::wstring const& deviceId, DeviceState state, std::wstring message = {});
 		/// <summary>
-		/// Reports every device that has a live connection as disconnected, and
-		/// notifies once. Used by Disconnect, which takes them all down together.
+		/// Reports the given devices as disconnected, and notifies once. Used by
+		/// Disconnect, for the one device whose connection it released.
 		/// </summary>
 		void ReportAllDisconnected(std::vector<std::wstring> const& deviceIds);
 		/// <summary>
@@ -346,15 +341,11 @@ namespace AudioPlaybackConnectorWinUI
 		static constexpr unsigned kReconnectMaxAttempts = 3;
 
 		/// <summary>
-		/// Notes that the device has a connect request outstanding, and whether it is
-		/// one that has to be carried out - a reconnect request that no connection
-		/// has been made for yet. Runs on the dispatcher.
-		///
-		/// The question asked here is about the request, not about the device: an
-		/// allow-paired invitation is a connection and not an open, so it neither
-		/// answers nor cancels a reconnect.
+		/// Notes that the device has a connect request outstanding. Runs on the
+		/// dispatcher. The request starts at zero attempts: it belongs to this launch,
+		/// and this is the launch that makes it.
 		/// </summary>
-		bool EnsureReconnectRequest(std::wstring const& deviceId, bool savedForReconnect);
+		void EnsureReconnectRequest(std::wstring const& deviceId);
 
 		/// <summary>Records one attempt against the device's request.</summary>
 		void RecordReconnectAttempt(std::wstring const& deviceId);
@@ -380,9 +371,44 @@ namespace AudioPlaybackConnectorWinUI
 		/// <summary>
 		/// True when an open reported for this connection is one this application
 		/// asked for and confirmed - the evidence that survives the platform's
-		/// process-wide transport report.
+		/// process-wide report.
 		/// </summary>
 		bool IsOpenRequested(std::shared_ptr<Connection> const& connection) const;
+
+		/// <summary>
+		/// <summary>
+		/// How long a link reading the sweep recorded is still used. The sweep reads
+		/// every streaming device every 2 s, so an entry is at most that old.
+		/// </summary>
+		static constexpr std::chrono::milliseconds kLinkCacheFreshMs{ 4000 };
+
+		/// <summary>
+		/// The link of this device address as the sweep last read it, or nullopt
+		/// when nothing fresh is known and the caller must fall back to the
+		/// connection's own evidence. Takes <c>m_connectionsMutex</c>.
+		/// </summary>
+		std::optional<bool> CachedLink(std::wstring const& address) const;
+
+		/// <summary>
+		/// One pass of the link watch, on a thread-pool thread: asks the Bluetooth
+		/// link of every connection currently believed to be streaming, and hands a
+		/// verifiably down one to ReleaseDroppedConnection on the dispatcher. Holds
+		/// no mutex across the Bluetooth call and does nothing at all - no call, no
+		/// allocation - when nothing is streaming.
+		/// </summary>
+		void SweepLinks();
+		/// <summary>
+		/// Takes one device off through the same path the event-driven drop uses,
+		/// after re-checking that the connection the pass saw is still the live,
+		/// open one for that device. Runs on the dispatcher.
+		/// </summary>
+		void ReleaseDroppedConnection(std::wstring deviceId, std::shared_ptr<Connection> const& connection);
+		/// <summary>
+		/// Cancels the link sweep and waits for a pass that is already inside the
+		/// Bluetooth stack. Stop() calls it before ReleaseAllConnections, so no pass
+		/// is left holding a connection.
+		/// </summary>
+		void StopLinkSweep();
 
 		/// <summary>
 		/// One full enumeration pass. Only RefreshDevicesAsync calls it, because that
@@ -396,9 +422,7 @@ namespace AudioPlaybackConnectorWinUI
 		std::vector<DeviceEntry> m_devices;
 		/// <summary>
 		/// One AudioPlaybackConnection per device, guarded by
-		/// <c>m_connectionsMutex</c>: the worker thread that opens a connection asks
-		/// whether its connection is still the live one while the UI thread may be
-		/// removing entries. The map remembers which connections are this
+		/// <c>m_connectionsMutex</c>. The map remembers which connections are this
 		/// application's to release.
 		/// </summary>
 		std::unordered_map<std::wstring, std::shared_ptr<Connection>> m_connections;
@@ -406,13 +430,21 @@ namespace AudioPlaybackConnectorWinUI
 		/// <summary>
 		/// Devices with "connect again on the next launch" still to be dealt with:
 		/// one entry per device in the settings list, removed once the device is
-		/// connected, or once its one attempt has failed. The first attempt is
+		/// connected, or once it is out of attempts. The first attempt is
 		/// deferred when the enumeration has not answered for the device yet, and
 		/// retried when it does - it is never dropped.
 		/// </summary>
 		std::unordered_map<std::wstring, ReconnectRequest> m_reconnectRequests;
 		/// <summary>Guards m_reconnectRequests; see ReconnectRequest.</summary>
 		mutable std::mutex m_reconnectMutex;
+
+		/// <summary>One device address's last link reading. See m_linkCache.</summary>
+		struct LinkReading
+		{
+			/// <summary>False is a link verifiably down; empty is one not read at all.</summary>
+			std::optional<bool> link;
+			std::chrono::steady_clock::time_point readAt;
+		};
 		winrt::Windows::Devices::Enumeration::DeviceWatcher m_watcher{ nullptr };
 		winrt::Microsoft::UI::Dispatching::DispatcherQueue m_dispatcher{ nullptr };
 		std::function<void()> m_onChanged;
@@ -441,6 +473,34 @@ namespace AudioPlaybackConnectorWinUI
 		bool m_refreshRunning = false;
 		/// <summary>Set by the request that arrived while a refresh was already running.</summary>
 		bool m_refreshAgain = false;
+		/// <summary>
+		/// The periodic link sweep: created by Start(), cancelled by Stop() before
+		/// any connection is released. See SweepLinks.
+		/// </summary>
+		winrt::Windows::System::Threading::ThreadPoolTimer m_linkSweep{ nullptr };
+		/// <summary>
+		/// Set while a pass is asking the Bluetooth stack. A tick that arrives while
+		/// it is set is skipped, so two passes never overlap.
+		/// </summary>
+		std::atomic<bool> m_sweepRunning{ false };
+		/// <summary>Set by Stop(), so a pass that is still queued does nothing.</summary>
+		std::atomic<bool> m_stopping{ false };
+		/// <summary>
+		/// What the link sweep last read from the Bluetooth stack, per device address.
+		/// It exists because reading a link is a call into the radio that can block,
+		/// and one of the two readers, IsOpenForThisDevice, runs on the dispatcher
+		/// thread. A few seconds old is acceptable there because every path re-asks
+		/// the link before it acts. Read and written under <c>m_connectionsMutex</c>.
+		/// </summary>
+		std::unordered_map<std::wstring, LinkReading> m_linkCache;
+		/// <summary>
+		/// Set when a process-wide report was answered without a fresh link reading,
+		/// so the truth is wanted within a tick rather than at the next 2 s tick.
+		/// SweepLinks clears it as it starts and carries a request raised during a
+		/// pass into one more pass, so the request is never dropped. Mutable because
+		/// the reader that raises it - IsOpenForThisDevice - is const.
+		/// </summary>
+		mutable std::atomic<bool> m_sweepNow{ false };
 	};
 
 	/// <summary>Process-wide A2DP service instance.</summary>

@@ -14,8 +14,7 @@
     script embeds it as RCDATA (301) - compressed, because the text is about 889 KB
     and the compressed form about 92 KB - and tools\package-single-file.ps1 copies
     the uncompressed file beside each packaged executable. The dialog decompresses
-    the resource in memory, so the text it shows is the text that was shipped and
-    nothing is read from disk.
+    the resource in memory, so the text it shows is the text that was shipped.
 
     Which packages have to be noticed is read from obj\project.assets.json rather
     than from the project file, because the payload also carries binaries from

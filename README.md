@@ -119,6 +119,9 @@ It keeps two files in the directory it runs from:
   receiver and notification switches, and the devices to reconnect on the next
   launch.
 
+When the program is started from the payload directory with the launcher bypassed,
+the files above are saved to the payload directory.
+
 ## Building from source
 
 Requirements: Visual Studio 2022 (17.x) or 2026 with the **Desktop development with
@@ -144,7 +147,7 @@ together with the two licence files that have to travel with it. Opening
 `AudioPlaybackConnectorWinUI.sln` builds the same projects in the IDE, without
 packaging.
 
-Two generated inputs are committed, and each has its own script:
+The translations have two generated inputs committed, and each has its own script:
 
 * `translate/generated/*` is produced from `translate/source/*.po` by
   `sh translate/gen_rc.sh` (a POSIX shell; the CI runs it from Git Bash). Adding or
@@ -183,9 +186,8 @@ The licence texts:
 * Inside the program: **right click the tray icon, then Licenses**. The dialog shows the
   licence and the notices compiled into the executable (RCDATA 300 and 301, the notices
   stored MSZIP compressed and decompressed in memory). The complete notice text is about
-  890,000 characters and a `TextBlock` that laid all of it out would block the UI thread,
-  so the dialog shows the beginning of it and states how long the whole text is and that
-  the program carries all of it.
+  890,000 characters; the dialog shows the beginning of it, and the complete text is
+  compiled into the program.
 
 The runtime packed into the program is not covered by this project's MIT licence.
 

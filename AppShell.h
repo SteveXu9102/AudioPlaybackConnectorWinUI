@@ -53,9 +53,6 @@ namespace AudioPlaybackConnectorWinUI
 
 	ShellActions& Shell();
 
-	/// <summary>
-	/// Writes the settings, closes the audio connections, removes the
-	/// notification-area icon and exits the application.
-	/// </summary>
+	/// <summary>Writes the settings, closes the connections, removes the icon and exits.</summary>
 	void ExitApplication();
 }
