@@ -23,6 +23,26 @@ namespace AudioPlaybackConnectorWinUI
 		return trayIcon;
 	}
 
+	// What the shell is actually handed for the tooltip: szTip is the only field a
+	// tooltip is drawn from, so an empty one is a tooltip that can never appear, and
+	// a tip sent before NIM_SETVERSION is a tip the v4 icon may not carry.
+	namespace
+	{
+		std::wstring TipText(NOTIFYICONDATAW const& nid)
+		{
+			return L"len=" + std::to_wstring(wcslen(nid.szTip)) + L" tip='" + std::wstring(nid.szTip) + L"'";
+		}
+
+		std::wstring TipFlags(DWORD flags)
+		{
+			return std::wstring(L"flags=") + std::to_wstring(flags)
+				+ (flags & NIF_TIP ? L"|TIP" : L"|-TIP")
+				+ (flags & NIF_SHOWTIP ? L"|SHOWTIP" : L"|-SHOWTIP")
+				+ (flags & NIF_ICON ? L"|ICON" : L"|-ICON")
+				+ (flags & NIF_MESSAGE ? L"|MESSAGE" : L"|-MESSAGE");
+		}
+	}
+
 	TrayIcon::~TrayIcon()
 	{
 		Destroy();
@@ -69,6 +89,9 @@ namespace AudioPlaybackConnectorWinUI
 		// ends the process - the moment a longer tooltip is passed in.
 		const std::wstring tooltipText(tooltip);
 		wcsncpy_s(m_nid.szTip, tooltipText.c_str(), _TRUNCATE);
+
+		LogTrace(L"tray create: source len=" + std::to_wstring(tooltipText.size())
+			+ L" source='" + tooltipText + L"' " + TipText(m_nid) + L" " + TipFlags(m_nid.uFlags));
 
 		m_niid.cbSize = sizeof(m_niid);
 		m_niid.hWnd = m_hwnd;
@@ -128,16 +151,47 @@ namespace AudioPlaybackConnectorWinUI
 	{
 		ApplyThemeIcon();
 
-		if (m_iconAdded && Shell_NotifyIconW(NIM_MODIFY, &m_nid))
-			return;
+		// The tooltip is part of what is sent, not something the shell keeps: a
+		// NIM_MODIFY that leaves NIF_TIP out, or that follows a version change, is a
+		// call the tip does not survive. The flags are re-asserted here so every
+		// registration path carries it.
+		m_nid.uFlags |= NIF_TIP | NIF_SHOWTIP;
 
-		if (Shell_NotifyIconW(NIM_ADD, &m_nid))
+		if (m_iconAdded)
+		{
+			const BOOL modified = Shell_NotifyIconW(NIM_MODIFY, &m_nid);
+			LogTrace(L"tray NIM_MODIFY(existing) ok=" + std::to_wstring(modified ? 1 : 0)
+				+ L" err=" + std::to_wstring(modified ? 0 : GetLastError())
+				+ L" " + TipText(m_nid) + L" " + TipFlags(m_nid.uFlags));
+			if (modified)
+				return;
+		}
+
+		const BOOL added = Shell_NotifyIconW(NIM_ADD, &m_nid);
+		LogTrace(L"tray NIM_ADD ok=" + std::to_wstring(added ? 1 : 0)
+			+ L" err=" + std::to_wstring(added ? 0 : GetLastError())
+			+ L" " + TipText(m_nid) + L" " + TipFlags(m_nid.uFlags));
+
+		if (added)
 		{
 			m_iconAdded = true;
-			if (!Shell_NotifyIconW(NIM_SETVERSION, &m_nid))
+			const BOOL versioned = Shell_NotifyIconW(NIM_SETVERSION, &m_nid);
+			const DWORD versionError = versioned ? 0 : GetLastError();
+			LogTrace(L"tray NIM_SETVERSION ok=" + std::to_wstring(versioned ? 1 : 0)
+				+ L" err=" + std::to_wstring(versionError)
+				+ L" " + TipText(m_nid) + L" " + TipFlags(m_nid.uFlags));
+			if (!versioned)
 			{
+				SetLastError(versionError);
 				LOG_LAST_ERROR();
 			}
+
+			// A v4 icon shows the standard tooltip only while NIF_SHOWTIP is set, and
+			// the tip has to be re-sent for the version switch to carry it.
+			const BOOL retipped = Shell_NotifyIconW(NIM_MODIFY, &m_nid);
+			LogTrace(L"tray NIM_MODIFY(after version) ok=" + std::to_wstring(retipped ? 1 : 0)
+				+ L" err=" + std::to_wstring(retipped ? 0 : GetLastError())
+				+ L" " + TipText(m_nid) + L" " + TipFlags(m_nid.uFlags));
 		}
 		else
 		{
@@ -161,7 +215,14 @@ namespace AudioPlaybackConnectorWinUI
 			}
 
 			ApplyThemeIcon();
-			if (!Shell_NotifyIconW(NIM_MODIFY, &m_nid))
+			// The tip is re-asserted with every modify, so a refresh for the theme or
+			// after an Explorer restart cannot leave the icon without one.
+			m_nid.uFlags |= NIF_TIP | NIF_SHOWTIP;
+			const BOOL modified = Shell_NotifyIconW(NIM_MODIFY, &m_nid);
+			LogTrace(L"tray NIM_MODIFY(refresh) ok=" + std::to_wstring(modified ? 1 : 0)
+				+ L" err=" + std::to_wstring(modified ? 0 : GetLastError())
+				+ L" " + TipText(m_nid) + L" " + TipFlags(m_nid.uFlags));
+			if (!modified)
 			{
 				m_iconAdded = false;
 				AddOrModifyIcon();
@@ -215,7 +276,18 @@ namespace AudioPlaybackConnectorWinUI
 		// szTip holds 127 characters plus the terminator, so this is truncated into
 		// the registration's own copy rather than handed over whole.
 		const std::wstring text(tooltip);
+		if (text.empty())
+		{
+			// An empty tip is a cleared one, and the call that would restore it is the
+			// one that emptied it.
+			LogFailure(L"Tray icon", L"an empty tooltip was ignored");
+			return;
+		}
+
 		wcsncpy_s(m_nid.szTip, text.c_str(), _TRUNCATE);
+
+		LogTrace(L"tray SetTooltip: source len=" + std::to_wstring(text.size())
+			+ L" source='" + text + L"' " + TipText(m_nid));
 
 		Refresh();
 	}

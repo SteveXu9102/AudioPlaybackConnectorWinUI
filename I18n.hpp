@@ -90,7 +90,10 @@ inline const wchar_t* Translate(const wchar_t* str)
 	{
 		auto hash = fnv1a_32(str, wcslen(str) * sizeof(wchar_t));
 		auto j = hashToStrMap.find(hash);
-		if (j != hashToStrMap.end())
+		// A catalog entry that is present but empty is not a translation: falling
+		// back to the source is what an absent entry does, and an empty answer
+		// silently blanks a user-visible string - a tray tooltip, in one case.
+		if (j != hashToStrMap.end() && j->second != nullptr && j->second[0] != L'\0')
 			translation = j->second;
 
 		ptrToStrMap.emplace(str, translation);

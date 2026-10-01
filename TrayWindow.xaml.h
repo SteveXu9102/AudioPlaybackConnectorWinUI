@@ -80,6 +80,30 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 		/// </summary>
 		void MeasureMenuAt(RECT const& work, UINT dpi, int& width, int& height);
 
+		/// <summary>
+		/// Moves the window onto the resting rectangle: a step when the popup is not on
+		/// screen or the shape of the rectangle changed, an eased height otherwise. The
+		/// bottom and right edges are the ones the icon fixes, so they are the same on
+		/// every frame and only the top edge moves.
+		/// </summary>
+		void ApplyContentRect(winrt::Windows::Graphics::RectInt32 const& rect, bool wasVisible);
+		/// <summary>The visible content height the window has right now.</summary>
+		int WindowContentHeight() const;
+		/// <summary>Starts, or re-targets, the height transition towards m_resizeRect.</summary>
+		void StartContentResize();
+		void OnResizeTick();
+		/// <summary>Ends a height transition in flight and restores the settled scroll bar policy.</summary>
+		void StopContentResize();
+		/// <summary>
+		/// The panel's vertical scroll bar is hidden for the length of a height
+		/// transition and returned to Auto when it settles.
+		/// </summary>
+		void SetPanelScrollBarHidden(bool hidden);
+		/// <summary>The panel's ScrollViewer, looked up once. Null until the panel is shown.</summary>
+		winrt::Microsoft::UI::Xaml::Controls::ScrollViewer PanelScrollViewer();
+		/// <summary>Tells the panel how much height the popup still has to grow.</summary>
+		void ReportPopupGrowth(int remainingPx);
+
 		void SetMode(PopupMode mode);
 		void ShowPanel();
 		void ShowMenu();
@@ -171,6 +195,26 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 		int m_slideDurationMs = 0;
 		bool m_slideHidesWindow = false;
 		uint64_t m_slideToken = 0;
+
+		/// <summary>
+		/// The height transition that follows a content change in an open popup.
+		/// m_resizeRect is the rectangle it is heading for and m_contentRect is the
+		/// one the window is on now, so the placement rule can still tell a change
+		/// from a repeat.
+		/// </summary>
+		winrt::Microsoft::UI::Dispatching::DispatcherQueueTimer m_resizeTimer{ nullptr };
+		winrt::Windows::Graphics::RectInt32 m_resizeRect{};
+		int m_resizeFromHeight = 0;
+		int m_resizeToHeight = 0;
+		uint64_t m_resizeStartTick = 0;
+		bool m_resizeActive = false;
+
+		/// <summary>
+		/// The panel's ScrollViewer, resolved the first time a transition needs it.
+		/// Kept so that the settled policy can be restored even when the menu - which
+		/// has taken the window's content - is the view on screen at the time.
+		/// </summary>
+		winrt::Microsoft::UI::Xaml::Controls::ScrollViewer m_panelScrollViewer{ nullptr };
 
 		double m_fadeFrom{ 1.0 };
 		double m_fadeTo{ 1.0 };

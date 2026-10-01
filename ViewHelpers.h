@@ -367,6 +367,65 @@ namespace AudioPlaybackConnectorWinUI::ViewHelpers
 	}
 
 	/// <summary>
+	/// The clock the popup's height transition and the section entrance inside it
+	/// share. The window and the section are animated by two different objects, and
+	/// the section must not appear before the window can hold it, so both ends of
+	/// that contract are stated here rather than in either of them.
+	/// </summary>
+	namespace ContentTransition
+	{
+		constexpr int kResizeMs = 150;
+		constexpr int kResizeFrameMs = 15;
+
+		/// <summary>The revealed section's own entrance, once the window can hold it.</summary>
+		constexpr int kRevealMs = 120;
+		constexpr int kRevealStaggerMs = 16;
+		/// <summary>How far below its place each revealed row starts.</summary>
+		constexpr double kRevealOffsetDip = 4.0;
+
+		/// <summary>
+		/// The revealed rows end 16 DIP above the bottom of the content (the panel's
+		/// ScrollViewer padding), so with the offset above the whole section is inside
+		/// the window once 12 DIP of the growth are left. Over the 90 px growth
+		/// measured here that is 74 ms into the 150 ms transition, and it holds for
+		/// any growth up to ~120 px.
+		/// </summary>
+		constexpr double kRevealHeadroomDip = 12.0;
+
+		/// <summary>
+		/// Leaving is the other way round: the section fades out over this, and only
+		/// when it is gone is the window allowed to shrink.
+		/// </summary>
+		constexpr int kSectionFadeOutMs = 90;
+		/// <summary>Slack on the frame timer's last step before the section is dropped.</summary>
+		constexpr int kSectionSettleMs = 25;
+	}
+
+	/// <summary>
+	/// The first descendant of the given type in the visual tree, or null. Used to
+	/// reach a control a hosting window has to configure and the view does not expose.
+	/// </summary>
+	template <typename T>
+	inline T FindDescendant(Mux::DependencyObject const& root)
+	{
+		if (root == nullptr)
+			return nullptr;
+
+		const int count = Muxm::VisualTreeHelper::GetChildrenCount(root);
+		for (int index = 0; index < count; ++index)
+		{
+			auto const child = Muxm::VisualTreeHelper::GetChild(root, index);
+			if (auto const match = child.try_as<T>())
+				return match;
+
+			if (auto const deeper = FindDescendant<T>(child))
+				return deeper;
+		}
+
+		return nullptr;
+	}
+
+	/// <summary>
 	/// Height the given view wants at the given content width. The hosting window
 	/// is sized before it is shown, so views are measured explicitly instead of
 	/// relying on hand maintained height constants.
@@ -458,9 +517,10 @@ namespace AudioPlaybackConnectorWinUI::ViewHelpers
 	///
 	/// It drives <see cref="Mux::UIElement::Opacity"/> rather than a composition
 	/// animation on the element visual, which had no visible effect inside the popup's
-	/// content island, and the elements are not translated because the popup is sized
-	/// exactly to its content. The fade always runs to its target value, so an
-	/// interrupted animation cannot leave an element at a partial opacity.
+	/// content island. The fade always runs to its target value, so an interrupted
+	/// animation cannot leave an element at a partial opacity. An optional starting
+	/// offset is applied through RenderTransform: that is not part of layout, so a
+	/// row that is still on its way in cannot change the height the window measured.
 	/// </summary>
 	class StaggeredFade
 	{
@@ -478,7 +538,8 @@ namespace AudioPlaybackConnectorWinUI::ViewHelpers
 		/// <summary>
 		/// Fades <paramref name="elements"/> from <paramref name="from"/> to
 		/// <paramref name="to"/>, each one <paramref name="staggerMs"/> after the
-		/// previous.
+		/// previous. With an offset, every element also rises from that far below its
+		/// place, easing with the fade.
 		/// </summary>
 		void Start(
 			Mux::UIElement const& owner,
@@ -486,7 +547,8 @@ namespace AudioPlaybackConnectorWinUI::ViewHelpers
 			int staggerMs,
 			int durationMs,
 			double from,
-			double to)
+			double to,
+			double offsetDip = 0.0)
 		{
 			// Abandon anything still running: the elements of a rebuilt view are
 			// gone, and the new run sets its own start values below.
@@ -494,13 +556,23 @@ namespace AudioPlaybackConnectorWinUI::ViewHelpers
 
 			m_from = from;
 			m_to = to;
+			m_offsetDip = offsetDip;
 			m_durationMs = durationMs > 0 ? durationMs : 1;
 
 			int index = 0;
 			for (auto const& element : elements)
 			{
 				element.Opacity(from);
-				m_items.push_back(Item{ element, staggerMs * index });
+
+				Muxm::TranslateTransform offset{ nullptr };
+				if (offsetDip != 0.0)
+				{
+					offset = Muxm::TranslateTransform();
+					offset.Y(offsetDip);
+					element.RenderTransform(offset);
+				}
+
+				m_items.push_back(Item{ element, staggerMs * index, offset });
 				++index;
 			}
 
@@ -511,7 +583,8 @@ namespace AudioPlaybackConnectorWinUI::ViewHelpers
 			{
 				LogTrace(L"entrance start items=" + std::to_wstring(m_items.size())
 					+ L" stagger=" + std::to_wstring(staggerMs)
-					+ L" duration=" + std::to_wstring(durationMs));
+					+ L" duration=" + std::to_wstring(durationMs)
+					+ L" offset=" + std::to_wstring(offsetDip));
 			}
 
 			m_startTick = GetTickCount64();
@@ -544,7 +617,12 @@ namespace AudioPlaybackConnectorWinUI::ViewHelpers
 			}
 
 			for (auto const& item : m_items)
+			{
 				item.element.Opacity(m_to);
+
+				if (item.offset)
+					item.offset.Y(0.0);
+			}
 
 			m_items.clear();
 		}
@@ -554,6 +632,7 @@ namespace AudioPlaybackConnectorWinUI::ViewHelpers
 		{
 			Mux::UIElement element{ nullptr };
 			int delayMs{ 0 };
+			Muxm::TranslateTransform offset{ nullptr };
 		};
 
 		static constexpr int kFrameMs = 15;
@@ -577,7 +656,12 @@ namespace AudioPlaybackConnectorWinUI::ViewHelpers
 				if (progress >= 1.0)
 					continue;
 
-				item.element.Opacity(m_from + (m_to - m_from) * Decelerate(progress));
+				const double eased = Decelerate(progress);
+				item.element.Opacity(m_from + (m_to - m_from) * eased);
+
+				if (item.offset)
+					item.offset.Y(m_offsetDip * (1.0 - eased));
+
 				running = true;
 			}
 
@@ -589,6 +673,7 @@ namespace AudioPlaybackConnectorWinUI::ViewHelpers
 		std::vector<Item> m_items{};
 		double m_from{ 1.0 };
 		double m_to{ 1.0 };
+		double m_offsetDip{ 0.0 };
 		int m_durationMs{ 1 };
 		uint64_t m_startTick{ 0 };
 	};

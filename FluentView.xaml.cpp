@@ -95,10 +95,18 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 		}
 	}
 
+	FluentView::~FluentView()
+	{
+		if (m_sectionTimer)
+		{
+			m_sectionTimer.Stop();
+			m_sectionTimer = nullptr;
+		}
+	}
+
 	FluentView::FluentView()
 	{
 		InitializeComponent();
-
 		PairButton().Click([](IInspectable const&, RoutedEventArgs const&)
 			{
 				if (Shell().openBluetoothSettings)
@@ -122,6 +130,137 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 		m_entrance.Start(DevicePanel(), DevicePanel().Children(), 40, 220, 0.0, 1.0);
 	}
 
+	bool FluentView::IsSectionOpen(std::wstring const& deviceId) const
+	{
+		return !m_expandedDeviceId.empty() && m_expandedDeviceId == deviceId;
+	}
+
+	/// <summary>
+	/// Shows a device's section and asks the popup to grow around it. The rows are
+	/// put at zero opacity here, before the popup measures the panel, so the height
+	/// the window grows to already holds the section while nothing of it is drawn.
+	/// </summary>
+	void FluentView::OpenSection(std::wstring const& deviceId, winrt::Microsoft::UI::Xaml::Controls::StackPanel const& details)
+	{
+		m_expandedDeviceId = deviceId;
+		m_expandedDetails = details;
+		details.Visibility(Visibility::Visible);
+
+		m_sectionPending = AreSystemAnimationsEnabled();
+		m_sectionDone = nullptr;
+
+		if (m_sectionPending)
+		{
+			for (auto const& row : details.Children())
+				row.Opacity(0.0);
+		}
+
+		// The popup grows first and reveals the section from its own height frames.
+		if (Shell().resizePopup)
+			Shell().resizePopup();
+		else
+			RevealSection();
+	}
+
+	/// <summary>
+	/// Hides a device's section, and only then lets the popup shrink: the state says
+	/// the section is closed at once - so a rebuild during the fade cannot bring it
+	/// back - but the rows stay in the tree, and in the height the window has, until
+	/// they have faded out.
+	/// </summary>
+	void FluentView::CloseSection(winrt::Microsoft::UI::Xaml::Controls::StackPanel const& details)
+	{
+		if (!details)
+			return;
+
+		m_expandedDeviceId.clear();
+		m_expandedDetails = nullptr;
+		m_sectionPending = false;
+		m_sectionDone = nullptr;
+
+		if (!AreSystemAnimationsEnabled())
+		{
+			details.Visibility(Visibility::Collapsed);
+			if (Shell().resizePopup)
+				Shell().resizePopup();
+			return;
+		}
+
+		m_section.Start(details, details.Children(), 0, ViewHelpers::ContentTransition::kSectionFadeOutMs, 1.0, 0.0);
+
+		m_sectionDone = [this, details]
+			{
+				details.Visibility(Visibility::Collapsed);
+				if (Shell().resizePopup)
+					Shell().resizePopup();
+			};
+
+		StartSectionTimer(ViewHelpers::ContentTransition::kSectionFadeOutMs
+			+ ViewHelpers::ContentTransition::kSectionSettleMs);
+	}
+
+	void FluentView::RevealSection()
+	{
+		if (!m_sectionPending)
+			return;
+
+		m_sectionPending = false;
+
+		if (!m_expandedDetails)
+			return;
+
+		m_section.Start(m_expandedDetails, m_expandedDetails.Children(),
+			ViewHelpers::ContentTransition::kRevealStaggerMs,
+			ViewHelpers::ContentTransition::kRevealMs,
+			0.0, 1.0,
+			ViewHelpers::ContentTransition::kRevealOffsetDip);
+	}
+
+	void FluentView::OnPopupGrowth(int remainingPx)
+	{
+		if (!m_sectionPending)
+			return;
+
+		// The window holds the whole section once it is within the content's bottom
+		// inset - less the distance the rows start below their place - of the height
+		// it is growing to. Frame timers only step every 15 ms, so the last frames
+		// land inside that band rather than exactly on the target.
+		const double scale = XamlRoot() ? XamlRoot().RasterizationScale() : 1.0;
+		const int headroom = static_cast<int>(std::lround(ViewHelpers::ContentTransition::kRevealHeadroomDip * scale));
+		if (remainingPx > headroom)
+			return;
+
+		RevealSection();
+	}
+
+	void FluentView::StartSectionTimer(int delayMs)
+	{
+		if (!m_sectionTimer)
+		{
+			m_sectionTimer = DispatcherQueue().CreateTimer();
+			m_sectionTimer.IsRepeating(false);
+			m_sectionTimer.Tick([this](auto&&, auto&&) { OnSectionTimer(); });
+		}
+
+		m_sectionTimer.Stop();
+		m_sectionTimer.Interval(winrt::Windows::Foundation::TimeSpan{
+			std::chrono::milliseconds(delayMs) });
+		m_sectionTimer.Start();
+	}
+
+	void FluentView::OnSectionTimer()
+	{
+		if (m_sectionTimer)
+			m_sectionTimer.Stop();
+
+		// Taken before the call: the completion may start another one.
+		auto const done = m_sectionDone;
+		m_sectionDone = nullptr;
+
+		if (done)
+			done();
+	}
+
 	void FluentView::CollapseExpandedSubmenu()
 	{
 		if (m_expandedDetails)
@@ -138,6 +277,13 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 		// Which submenu was open is remembered by id, not by element, so it survives
 		// the rebuild below.
 		m_expandedDetails = nullptr;
+
+		// Every card is replaced, and with it the section a fade or a reveal was
+		// holding: the rows of the new one start visible, and the old one's
+		// completion must not run against elements that are gone.
+		m_section.Stop();
+		m_sectionPending = false;
+		m_sectionDone = nullptr;
 
 		Palette palette{
 			ProbeCardBackground().Background(),
@@ -437,21 +583,16 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 					more, L"DeviceMoreButton" + std::to_wstring(index));
 				more.Click([this, deviceId, details](IInspectable const&, RoutedEventArgs const&)
 					{
-						const bool opening = details.Visibility() != Visibility::Visible;
-
-						CollapseExpandedSubmenu();
-
-						details.Visibility(opening ? Visibility::Visible : Visibility::Collapsed);
-						if (opening)
+						if (IsSectionOpen(std::wstring(deviceId)))
 						{
-							m_expandedDeviceId = std::wstring(deviceId);
-							m_expandedDetails = details;
+							CloseSection(details);
+							return;
 						}
 
-						// Re-measured around the section that just appeared: the panel is
-						// sized exactly to its content, and a rebuild would collapse it.
-						if (Shell().resizePopup)
-							Shell().resizePopup();
+						// Only one card's section is open at a time: another one goes at
+						// once, which leaves the height the window has to grow unchanged.
+						CollapseExpandedSubmenu();
+						OpenSection(std::wstring(deviceId), details);
 					});
 
 				actions.Children().Append(more);

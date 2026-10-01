@@ -108,9 +108,12 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 			m_window = winrt::make<implementation::TrayWindow>();
 
 			const auto window = m_window;
+			const wchar_t* const productName = _(L"AudioPlaybackConnectorWinUI");
+			LogTrace(L"product name lookup: len=" + std::to_wstring(wcslen(productName))
+				+ L" text='" + std::wstring(productName) + L"'");
 			Tray().Create(
 				g_hInst,
-				_(L"AudioPlaybackConnectorWinUI"),
+				productName,
 				[window](bool contextMenu)
 				{
 					if (contextMenu)
@@ -118,6 +121,14 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 					else
 						window.Toggle();
 				});
+
+			// The anchor every popup is placed against, and whether the shell has a
+			// rectangle for the icon at all: an icon in the hidden-icons flyout is
+			// one the tray area draws no tooltip for.
+			const RECT iconRect = Tray().IconRect();
+			LogTrace(std::wstring(L"tray icon rect: ") + (IsRectEmpty(&iconRect) ? L"empty" : L"")
+				+ L" (" + std::to_wstring(iconRect.left) + L"," + std::to_wstring(iconRect.top)
+				+ L")-(" + std::to_wstring(iconRect.right) + L"," + std::to_wstring(iconRect.bottom) + L")");
 
 			Playback().SetChangeHandler([window] { window.RefreshDevices(); });
 

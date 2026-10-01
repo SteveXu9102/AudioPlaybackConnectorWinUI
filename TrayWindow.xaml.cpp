@@ -51,6 +51,12 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 		constexpr int kShowFadeMs = 200;
 		constexpr int kHideFadeMs = 130;
 
+		// The height a content change grows into, and the entrance the revealed
+		// section gets once the window can hold it: one clock for the two, in
+		// ViewHelpers.h.
+		using ViewHelpers::ContentTransition::kResizeMs;
+		using ViewHelpers::ContentTransition::kResizeFrameMs;
+
 		// Clicking the notification-area icon deactivates (and therefore hides)
 		// an open popup before the shell delivers the click. An activation that
 		// arrives this soon after the same popup hid is the click that closed
@@ -143,6 +149,12 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 		{
 			m_slideTimer.Stop();
 			m_slideTimer = nullptr;
+		}
+
+		if (m_resizeTimer)
+		{
+			m_resizeTimer.Stop();
+			m_resizeTimer = nullptr;
 		}
 
 		if (m_foregroundTimer)
@@ -384,6 +396,11 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 			RefreshAllViews();
 			return;
 		}
+
+		// The window is about to hold different content. A height transition left over
+		// from this one was measured against the content that is going away, and its
+		// frames would move the other view.
+		StopContentResize();
 
 		// One window swaps its content between the panel and the menu, and the
 		// compositor keeps presenting the surface it already has while the new content
@@ -764,6 +781,13 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 		int height = 0;
 		if (m_mode == PopupMode::Panel)
 		{
+			// Measured under the policy the settled panel will have: a bar that has
+			// appeared takes 12 px of width, which rewraps the content and can change
+			// the very height being measured. A transition in flight keeps the bar
+			// hidden through its own layout passes instead.
+			if (!m_resizeActive)
+				SetPanelScrollBarHidden(false);
+
 			width = ViewHelpers::ScaleToPixels(kPanelWidth, dpi);
 			height = ViewHelpers::ScaleToPixels(std::clamp(
 				ViewHelpers::MeasureContentHeight(m_panel, kPanelWidth, kPanelFallbackHeight),
@@ -798,19 +822,6 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 		x = std::clamp(x, workLeft + margin, std::max(workLeft + margin, workRight - width - margin));
 		y = std::clamp(y, workTop + margin, std::max(workTop + margin, workBottom - height - margin));
 
-		const winrt::Windows::Graphics::RectInt32 rect{ x, y, width, height };
-
-		// A re-placement that changed nothing must not resize the window: the popup is
-		// sized exactly to its content and the window is already at this rectangle.
-		if (wasVisible
-			&& rect.X == m_contentRect.X && rect.Y == m_contentRect.Y
-			&& rect.Width == m_contentRect.Width && rect.Height == m_contentRect.Height)
-		{
-			return;
-		}
-
-		m_contentRect = rect;
-
 		if (IsTraceEnabled())
 		{
 			LogTrace(std::wstring(m_mode == PopupMode::Panel ? L"panel" : L"menu")
@@ -823,7 +834,207 @@ namespace winrt::AudioPlaybackConnectorWinUI::implementation
 				+ L"," + std::to_wstring(workRight) + L"," + std::to_wstring(workBottom));
 		}
 
-		ViewHelpers::MoveContentArea(*this, x, y, width, height);
+		ApplyContentRect(winrt::Windows::Graphics::RectInt32{ x, y, width, height }, wasVisible);
+	}
+
+	/// <summary>
+	/// Puts the window on the resting rectangle. While the popup is on screen and
+	/// only its height changed, the new height is eased in over kResizeMs so the
+	/// panel grows out of the icon rather than snapping to it.
+	/// </summary>
+	void TrayWindow::ApplyContentRect(winrt::Windows::Graphics::RectInt32 const& rect, bool wasVisible)
+	{
+		// A running transition is heading for something else: the new height is
+		// simply where it now has to end up, and it is already moving.
+		if (m_resizeActive)
+		{
+			// Unless the window is off screen: a mode switch or a fresh show has
+			// nothing to animate from, and the content the transition was measured
+			// against is not there any more.
+			if (!wasVisible)
+			{
+				StopContentResize();
+			}
+			else
+			{
+				m_resizeRect = rect;
+				m_resizeToHeight = rect.Height;
+				return;
+			}
+		}
+
+		// A re-placement that computes the same rectangle does nothing: the popup is
+		// sized exactly to its content and the window is already at this rectangle.
+		// The panel is still told, because a section can be waiting for a window that
+		// has no growing left to do.
+		if (wasVisible
+			&& rect.X == m_contentRect.X && rect.Y == m_contentRect.Y
+			&& rect.Width == m_contentRect.Width && rect.Height == m_contentRect.Height)
+		{
+			ReportPopupGrowth(0);
+			return;
+		}
+
+		// The height is animated only when the bottom right corner the icon fixes is
+		// the one already in place and nothing but the height has to change. A window
+		// that is off screen, a width that has to change or a different anchor would
+		// have to move in a step an animation cannot hide.
+		const bool animate = wasVisible
+			&& AreSystemAnimationsEnabled()
+			&& rect.Width == m_contentRect.Width
+			&& rect.X == m_contentRect.X
+			&& (rect.Y + rect.Height) == (m_contentRect.Y + m_contentRect.Height)
+			&& rect.Height != m_contentRect.Height;
+
+		m_contentRect = rect;
+
+		if (!animate)
+		{
+			ViewHelpers::MoveContentArea(*this, rect.X, rect.Y, rect.Width, rect.Height);
+			ReportPopupGrowth(0);
+			return;
+		}
+
+		LogTrace(L"resize start from=" + std::to_wstring(WindowContentHeight())
+			+ L" to=" + std::to_wstring(rect.Height)
+			+ L" bottom=" + std::to_wstring(rect.Y + rect.Height));
+
+		StartContentResize();
+	}
+
+	/// <summary>
+	/// The panel's vertical scroll bar is hidden while the window is changing height.
+	/// Hidden rather than Disabled, so the section can still be scrolled to, and it
+	/// takes no width while it is hidden: a bar that appears takes about 12 px, which
+	/// rewraps the content and changes the height the transition is aiming at. The
+	/// settled policy is Auto, so a panel whose content really is taller than its
+	/// maximum height - many devices - still gets its bar.
+	/// </summary>
+	void TrayWindow::SetPanelScrollBarHidden(bool hidden)
+	{
+		if (auto const viewer = PanelScrollViewer())
+		{
+			viewer.VerticalScrollBarVisibility(hidden
+				? ScrollBarVisibility::Hidden
+				: ScrollBarVisibility::Auto);
+		}
+	}
+
+	winrt::Microsoft::UI::Xaml::Controls::ScrollViewer TrayWindow::PanelScrollViewer()
+	{
+		// Looked up once, while the panel is the window's content and laid out. Kept,
+		// because the policy has to be restorable after the menu has taken the window.
+		if (!m_panelScrollViewer && m_panel && m_mode == PopupMode::Panel)
+			m_panelScrollViewer = ViewHelpers::FindDescendant<ScrollViewer>(m_panel);
+
+		return m_panelScrollViewer;
+	}
+
+	void TrayWindow::StopContentResize()
+	{
+		if (m_resizeTimer)
+			m_resizeTimer.Stop();
+
+		m_resizeActive = false;
+		SetPanelScrollBarHidden(false);
+	}
+
+	/// <summary>
+	/// Reports the height the popup still has to grow to the panel, whose section
+	/// entrance is waiting for the window to be big enough to hold it.
+	/// </summary>
+	void TrayWindow::ReportPopupGrowth(int remainingPx)
+	{
+		if (m_mode != PopupMode::Panel || !m_panel)
+			return;
+
+		if (auto* panel = winrt::get_self<FluentView>(m_panel))
+			panel->OnPopupGrowth(remainingPx);
+	}
+
+	/// <summary>The visible content height the window has right now.</summary>
+	int TrayWindow::WindowContentHeight() const
+	{
+		const HWND hwnd = ViewHelpers::GetWindowHandle(*this);
+		RECT window{};
+		if (hwnd == nullptr || !GetWindowRect(hwnd, &window))
+			return m_contentRect.Height;
+
+		const ViewHelpers::FrameInsets insets = ViewHelpers::GetFrameInsets(hwnd);
+		return (window.bottom - window.top) - insets.top - insets.bottom;
+	}
+
+	/// <summary>
+	/// Starts - or restarts, for a second press - the height transition towards
+	/// m_resizeRect. The height it starts from is the window's own, so a transition
+	/// that interrupts another starts from what is really on screen.
+	/// </summary>
+	void TrayWindow::StartContentResize()
+	{
+		// No bar can be allowed to appear while the window is not the height of its
+		// content; the panel is put back on Auto when the transition settles.
+		SetPanelScrollBarHidden(true);
+
+		// Seeded from the current rectangle and then kept on m_contentRect by
+		// ApplyContentRect, which re-targets a transition that is already running.
+		m_resizeRect = m_contentRect;
+		m_resizeFromHeight = WindowContentHeight();
+		m_resizeToHeight = m_contentRect.Height;
+		m_resizeStartTick = GetTickCount64();
+		m_resizeActive = true;
+
+		if (!m_resizeTimer)
+		{
+			m_resizeTimer = RootHost().DispatcherQueue().CreateTimer();
+			m_resizeTimer.Interval(winrt::Windows::Foundation::TimeSpan{
+				std::chrono::milliseconds(kResizeFrameMs) });
+			m_resizeTimer.IsRepeating(true);
+			m_resizeTimer.Tick([this](auto&&, auto&&) { OnResizeTick(); });
+		}
+		m_resizeTimer.Start();
+
+		// One frame applied straight away: a transition stopped before its first tick
+		// would otherwise leave the window at the size the previous content had.
+		OnResizeTick();
+	}
+
+	void TrayWindow::OnResizeTick()
+	{
+		if (!m_resizeActive)
+			return;
+
+		const int bottom = m_resizeRect.Y + m_resizeRect.Height;
+		const uint64_t elapsed = GetTickCount64() - m_resizeStartTick;
+		double progress = static_cast<double>(elapsed) / kResizeMs;
+		if (progress > 1.0)
+			progress = 1.0;
+
+		const int height = static_cast<int>(std::lround(
+			m_resizeFromHeight + (m_resizeToHeight - m_resizeFromHeight) * ViewHelpers::Decelerate(progress)));
+
+		// The bottom edge is the anchor, so the top edge is the only thing that moves,
+		// and the size and the position go in one call - never two visible steps.
+		ViewHelpers::MoveContentArea(*this, m_resizeRect.X, bottom - height, m_resizeRect.Width, height);
+
+		// What is left of the growth decides when the panel may show the section the
+		// user opened. Zero on the last frame, which is the one that settles.
+		ReportPopupGrowth(m_resizeToHeight - height);
+
+		if (IsTraceEnabled())
+		{
+			LogTrace(L"resize tick t=" + std::to_wstring(elapsed) + L" h=" + std::to_wstring(height)
+				+ L" top=" + std::to_wstring(bottom - height) + L" bottom=" + std::to_wstring(bottom));
+		}
+
+		if (progress < 1.0)
+			return;
+
+		// Settle exactly on the measured rectangle, whatever the rounding did on the
+		// way, and release the window: the next placement may move it again.
+		m_resizeActive = false;
+		ViewHelpers::MoveContentArea(*this, m_resizeRect.X, m_resizeRect.Y, m_resizeRect.Width, m_resizeRect.Height);
+		m_resizeTimer.Stop();
+		SetPanelScrollBarHidden(false);
 	}
 
 	void TrayWindow::PrepareSlideIn()
